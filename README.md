@@ -26,7 +26,7 @@ Run commands from the OpenADS project root.
 Create and activate your environment:
 
 ```bash
-source /home/joshua/venvs/ads_torch2/bin/activate
+source XXXX/bin/activate
 ````
 
 Run a full DWI pipeline on an example subject:
