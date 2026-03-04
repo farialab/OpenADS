@@ -2,6 +2,8 @@
 
 OpenADS is an end to end medical imaging pipeline for stroke analysis, covering preprocessing, registration, segmentation, and report generation for DWI and PWI workflows.
 
+![OpenADS UI](server/ui.png)
+
 ## What OpenADS does
 
 OpenADS runs standardized pipelines that take a single subject folder and produce:
