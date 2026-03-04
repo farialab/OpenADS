@@ -1,0 +1,55 @@
+FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    MPLBACKEND=Agg \
+    MPLCONFIGDIR=/tmp/matplotlib \
+    XDG_CONFIG_HOME=/tmp/.config \
+    XDG_CACHE_HOME=/tmp/.cache \
+    OPENADS_OUTPUT_ROOT=/app/output \
+    OPENADS_UPLOAD_ROOT=/tmp/openads_raw_upload \
+    ADS_CACHE_DIR=/tmp/ads_cache \
+    QT_QPA_PLATFORM=offscreen \
+    PYTHONPATH=/app:/app/src:/app/scripts:/app/docker
+
+# Base OS deps needed by ANTs/SimpleITK/Qt backends
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.10 python3-pip python3-venv python3-dev \
+    build-essential git curl ca-certificates \
+    libgl1 libglib2.0-0 \
+    libsm6 libxext6 libxrender1 \
+    libxkbcommon-x11-0 libxcb-xinerama0 libxcb-cursor0 \
+    libfontconfig1 libfreetype6 \
+    libgomp1 libfftw3-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Workdir + venv
+WORKDIR /app
+RUN python3 -m venv /opt/venv
+ENV PATH=/opt/venv/bin:$PATH \
+    PYTHONPATH=/app:/app/src:/app/scripts:/app/docker
+
+# Pip tooling
+RUN python -m pip install -U pip setuptools wheel
+
+# Install CUDA-matched Torch stack first (cu121)
+RUN pip install --extra-index-url https://download.pytorch.org/whl/cu121 \
+    "torch==2.4.*" "torchvision==0.19.*" "torchaudio==2.4.*"
+
+# Python deps for the pipelines
+COPY docker/requirements.txt /tmp/requirements.txt
+RUN pip install -r /tmp/requirements.txt
+
+# Copy source
+COPY . /app
+
+# Non-root user (match typical host uid)
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+
+# Install entrypoint with execute bit at copy time (BuildKit)
+COPY --chmod=0755 docker/entrypoint.sh /usr/local/bin/ads
+
+USER appuser
+ENTRYPOINT ["ads"]
+CMD ["api"]

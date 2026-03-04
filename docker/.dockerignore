@@ -1,0 +1,8 @@
+.git
+__pycache__/
+*.pyc
+build/ dist/
+outputs/ output/
+data/ datasets/
+logs/
+.cache/

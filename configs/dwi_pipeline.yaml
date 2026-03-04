@@ -1,0 +1,31 @@
+pipeline_name: "dwi"
+
+stages:
+  prepdata: true
+  gen_mask: true
+  skull_strip: true
+  registration: true
+  inference: true
+  report: true
+
+dirs:
+  raw_input: "${PROJECT_ROOT}/assets/examples/dwi"
+
+data_raw:
+  bvalue: 1000
+  use_b0: true
+  force_adc_calc: false
+  
+brain_extraction:
+  mask_option: "synthstrip"
+  use_gpu: true
+
+model:
+  name: "DAGMNet_CH3"
+  architecture: "DAGMNet"
+  channels: 3
+  path: "${PROJECT_ROOT}/assets/models/DAGMNet_CH3.pth"
+
+reporting:
+  lesion_name: "DWIstroke"
+  save_mni: true

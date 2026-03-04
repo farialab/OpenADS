@@ -1,0 +1,84 @@
+pipeline_name: "pwi"
+
+# --- Pipeline Control ---
+# Dependencies:
+# - gen_ttp requires prepdata
+# - ttpadc_coreg requires gen_ttp AND registration
+# - report requires inference
+stages:
+  prepdata: true
+  gen_mask: true
+  skull_strip: true
+  gen_ttp: true         # MUST be true for ttpadc_coreg to work
+  registration: true    # MUST be true for ttpadc_coreg to work
+  ttpadc_coreg: true
+  inference: true
+  report: true
+
+dirs:
+  raw_input: "${PROJECT_ROOT}/assets/examples/pwi"
+
+paths:
+  project_root: "${PROJECT_ROOT}"
+  assets_dir: "${PROJECT_ROOT}/assets"
+  output_root: "${PROJECT_ROOT}/output"
+
+# --- Registration Settings ---
+registration:
+  always_register: false  # If false, reuse DWI registration via symlink (saves time & storage)
+  raw_ttp_masked: true    # true: use *_TTP_space-DWI.nii.gz downstream; false: use *_TTP_space-DWI_desc-brain.nii.gz
+  
+# --- PWI Specific Preprocessing ---
+pwi_preprocessing:
+  slicetime_correction:
+    slice_order_code: 3
+    interp_degree: 1
+  motion_correction:
+    motion_correction: true
+    save_corrected_PWI: false
+    timeout_seconds: 180
+    skip_if_timeout: true
+    registration_params:
+      mode: 'rigid'
+      level_iters: [100, 10]
+      sigmas: [3.0, 1.0]
+      factors: [4, 2]
+  brain_masking_method: 'synthstrip'
+  gd_concentration:
+    gauss_filtering:
+      fwhm_spatial: 2.35
+      fwhm_temporal: 3.53
+    g0_baseline:
+      baseline_volumes: 6
+      adaptive_baseline: true
+      baseline_percentage: 0.10
+      skip_volumes: 1
+      trim_high: 1
+      trim_low: 1
+    gd_calculation:
+      echo_time: 0.03
+  ttp_peaks:
+    num_peaks: 3
+    prominence: 1
+    height: 2
+    width: 3
+
+model:
+  name: "3DUNet_PWI_Ch4"
+  channels: 4
+  path_ch4: "${PROJECT_ROOT}/assets/models/3DUNet_PWI_Ch4.pth"
+  path_ch3: "${PROJECT_ROOT}/assets/models/3DUNet_PWI_Ch3.pth"
+  dagmnet_nostroke: "${PROJECT_ROOT}/checkpoints/dagmnet_nostroke.pth"
+  
+dagmnet:
+  checkpoint: "${PROJECT_ROOT}/assets/models/dagmnet_nostroke.pth"
+  n_channels: 4
+  threshold: 0.49
+  post_min_size: 50
+  device: "cuda:1"  # ✅ Explicitly set to GPU 1
+  auto_generate_symclassic: true
+  
+inference_params:
+  input_size: [176, 224, 176]
+  normalize_ttp: true
+  threshold: 0.5

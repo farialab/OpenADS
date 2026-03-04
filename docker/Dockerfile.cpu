@@ -1,0 +1,48 @@
+FROM python:3.10-slim
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    MPLBACKEND=Agg \
+    MPLCONFIGDIR=/tmp/matplotlib \
+    XDG_CONFIG_HOME=/tmp/.config \
+    XDG_CACHE_HOME=/tmp/.cache \
+    OPENADS_OUTPUT_ROOT=/app/output \
+    OPENADS_UPLOAD_ROOT=/tmp/openads_raw_upload \
+    ADS_CACHE_DIR=/tmp/ads_cache \
+    QT_QPA_PLATFORM=offscreen \
+    PYTHONPATH=/app:/app/src:/app/scripts:/app/docker
+
+# Native deps required by ANTs/SimpleITK/Qt backends
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential git curl ca-certificates \
+    libgl1 libglib2.0-0 \
+    libsm6 libxext6 libxrender1 \
+    libxkbcommon-x11-0 libxcb-xinerama0 libxcb-cursor0 \
+    libfontconfig1 libfreetype6 \
+    libgomp1 libfftw3-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+RUN python -m pip install -U pip setuptools wheel
+
+# CPU Torch stack
+RUN pip install --index-url https://download.pytorch.org/whl/cpu \
+    "torch==2.4.*" "torchvision==0.19.*" "torchaudio==2.4.*"
+
+# Python deps
+COPY docker/requirements.txt /tmp/requirements.txt
+RUN pip install -r /tmp/requirements.txt
+
+# Source
+COPY . /app
+
+# Non-root user
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+
+# Entrypoint
+COPY --chmod=0755 docker/entrypoint.sh /usr/local/bin/ads
+
+USER appuser
+ENTRYPOINT ["/usr/local/bin/ads"]
+CMD ["api"]

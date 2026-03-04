@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ADS Pipeline Launcher v4.3 | Web</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@niivue/niivue@0.47.0/dist/index.umd.js"></script>
+  <style>
+    body { background: #0b1020; color: #e2e8f0; }
+    .panel { background: rgba(15,23,42,0.78); border: 1px solid rgba(148,163,184,0.25); border-radius: 12px; }
+    .field { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 8px; padding: 6px 10px; width: 100%; }
+    .tab-active { color: #fff; border-bottom: 2px solid #22d3ee; }
+    .tab-inactive { color: #94a3b8; border-bottom: 2px solid transparent; }
+    #log { background: #020617; color: #86efac; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  </style>
+</head>
+<body class="h-screen overflow-hidden">
+  <div class="h-full p-4 flex flex-col gap-4">
+    <header class="px-2">
+      <h1 class="text-2xl font-semibold">ADS Pipeline Launcher v4.3 (Web)</h1>
+    </header>
+
+    <main class="flex-1 min-h-0 flex gap-4">
+      <section class="w-[430px] min-w-[380px] max-w-[470px] panel p-4 overflow-y-auto">
+        <div class="mb-4">
+          <h2 class="text-sm font-semibold mb-2">Environment Configuration</h2>
+          <div class="space-y-2">
+            <div>
+              <label class="text-xs text-slate-300">Project Root</label>
+              <input id="project_root" class="field" value="/app" />
+            </div>
+            <div>
+              <label class="text-xs text-slate-300">Virtual Env</label>
+              <input id="virtual_env" class="field" value="/opt/venv" />
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="text-xs text-slate-300">Modality</label>
+          <select id="modality" class="field mt-1">
+            <option value="DWI">DWI</option>
+            <option value="PWI">PWI</option>
+            <option value="DWI_PWI">DWI &amp; PWI</option>
+          </select>
+        </div>
+
+        <div id="page_dwi" class="space-y-3">
+          <h3 class="text-sm font-semibold">DWI</h3>
+          <div>
+            <label class="text-xs">Subject Folder</label>
+            <input id="dwi_subject_path" class="field" placeholder="/abs/path/to/sub-xxxx" />
+          </div>
+          <div>
+            <label class="text-xs">Subject ID</label>
+            <input id="dwi_subject_id" class="field" placeholder="sub-xxxx" />
+          </div>
+          <div>
+            <label class="text-xs">Output Root</label>
+            <input id="dwi_output_root" class="field" value="/app/output" />
+          </div>
+          <div>
+            <label class="text-xs">Config File</label>
+            <input id="dwi_config" class="field" value="configs/dwi_pipeline.yaml" />
+          </div>
+          <div>
+            <label class="text-xs">GPU ID</label>
+            <input id="dwi_gpu" class="field" value="1" />
+          </div>
+          <div>
+            <p class="text-xs font-medium mb-1">Pipeline Stages (DWI)</p>
+            <div id="dwi_stages" class="grid grid-cols-2 gap-1 text-xs"></div>
+          </div>
+        </div>
+
+        <div id="page_pwi" class="space-y-3 hidden">
+          <h3 class="text-sm font-semibold">PWI</h3>
+          <div>
+            <label class="text-xs">Subject Folder</label>
+            <input id="pwi_subject_path" class="field" placeholder="/abs/path/to/sub-xxxx" />
+          </div>
+          <div>
+            <label class="text-xs">Subject ID</label>
+            <input id="pwi_subject_id" class="field" placeholder="sub-xxxx" />
+          </div>
+          <div>
+            <label class="text-xs">Output Root</label>
+            <input id="pwi_output_root" class="field" value="/app/output" />
+          </div>
+          <div>
+            <label class="text-xs">Config File</label>
+            <input id="pwi_config" class="field" value="configs/pwi_pipeline.yaml" />
+          </div>
+          <div>
+            <label class="text-xs">GPU ID</label>
+            <input id="pwi_gpu" class="field" value="1" />
+          </div>
+          <div>
+            <p class="text-xs font-medium mb-1">Pipeline Stages (PWI)</p>
+            <div id="pwi_stages" class="grid grid-cols-2 gap-1 text-xs"></div>
+          </div>
+        </div>
+
+        <div id="page_combined" class="space-y-3 hidden">
+          <h3 class="text-sm font-semibold">DWI &amp; PWI</h3>
+          <div>
+            <label class="text-xs">DWI Subject Folder</label>
+            <input id="c_dwi_subject_path" class="field" placeholder="/abs/path/to/dwi/sub-xxxx" />
+          </div>
+          <div>
+            <label class="text-xs">PWI Subject Folder</label>
+            <input id="c_pwi_subject_path" class="field" placeholder="/abs/path/to/pwi/sub-xxxx" />
+          </div>
+          <div>
+            <label class="text-xs">Subject ID</label>
+            <input id="c_subject_id" class="field" placeholder="sub-xxxx" />
+          </div>
+          <div>
+            <label class="text-xs">Output Root</label>
+            <input id="c_output_root" class="field" value="/app/output" />
+          </div>
+          <div>
+            <label class="text-xs">DWI Config File</label>
+            <input id="c_dwi_config" class="field" value="configs/dwi_pipeline.yaml" />
+          </div>
+          <div>
+            <label class="text-xs">PWI Config File</label>
+            <input id="c_pwi_config" class="field" value="configs/pwi_pipeline.yaml" />
+          </div>
+          <div>
+            <label class="text-xs">GPU ID</label>
+            <input id="c_gpu" class="field" value="1" />
+          </div>
+          <div>
+            <p class="text-xs font-medium mb-1">Pipeline Stages (DWI)</p>
+            <div id="c_dwi_stages" class="grid grid-cols-2 gap-1 text-xs"></div>
+          </div>
+          <div>
+            <p class="text-xs font-medium mb-1">Pipeline Stages (PWI)</p>
+            <div id="c_pwi_stages" class="grid grid-cols-2 gap-1 text-xs"></div>
+          </div>
+        </div>
+
+        <button id="run_btn" class="mt-4 w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-lg">Run Full Pipeline</button>
+        <div class="mt-3 w-full h-2 bg-slate-800 rounded">
+          <div id="pbar" class="h-2 bg-cyan-400 rounded" style="width:0%"></div>
+        </div>
+      </section>
+
+      <section class="flex-1 min-w-0 panel p-0 flex flex-col">
+        <div class="px-4 pt-3 border-b border-slate-700 flex gap-3 text-sm">
+          <button data-tab="preview" class="tab-btn tab-active pb-2">Preview</button>
+          <button data-tab="log" class="tab-btn tab-inactive pb-2">Log / Status</button>
+          <button data-tab="report" class="tab-btn tab-inactive pb-2">Report Files</button>
+        </div>
+
+        <div id="tab_preview" class="flex-1 p-4 min-h-0">
+          <div class="grid grid-cols-3 gap-3 mb-3">
+            <select id="base_select" class="field"></select>
+            <select id="overlay_select" class="field"><option value="">(none)</option></select>
+            <button id="load_nifti" class="bg-cyan-700 hover:bg-cyan-600 rounded-lg px-3 py-2 text-sm">Load</button>
+          </div>
+          <div class="h-[calc(100%-56px)] border border-slate-700 rounded overflow-hidden"><canvas id="nv_canvas" class="w-full h-full"></canvas></div>
+        </div>
+
+        <div id="tab_log" class="hidden flex-1 p-4 min-h-0">
+          <div id="log" class="h-full rounded p-3 overflow-auto text-xs">[READY] Waiting to run.</div>
+        </div>
+
+        <div id="tab_report" class="hidden flex-1 p-4 min-h-0">
+          <div class="flex gap-2 mb-2">
+            <button id="refresh_report" class="bg-slate-700 hover:bg-slate-600 rounded px-3 py-1 text-xs">Refresh</button>
+            <button id="download_all" class="bg-slate-700 hover:bg-slate-600 rounded px-3 py-1 text-xs">Download All</button>
+            <span id="report_info" class="text-xs text-slate-400"></span>
+          </div>
+          <div class="grid grid-cols-3 gap-3 h-[calc(100%-36px)]">
+            <div id="report_list" class="col-span-1 border border-slate-700 rounded p-2 overflow-auto text-sm"></div>
+            <div id="report_preview" class="col-span-2 border border-slate-700 rounded p-2 overflow-auto text-sm"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+<script>
+const STAGES = {
+  DWI: ["prepdata","gen_mask","skull_strip","registration","inference","postprocessing","report"],
+  PWI: ["prepdata","gen_mask","skull_strip","gen_ttp","registration","ttpadc_coreg","inference","report"]
+};
+
+const $ = (id) => document.getElementById(id);
+let nv = null;
+let reportFiles = [];
+
+function mkStages(containerId, prefix, stages) {
+  const c = $(containerId);
+  c.innerHTML = "";
+  stages.forEach((s) => {
+    const row = document.createElement("label");
+    row.className = "flex items-center gap-2";
+    row.innerHTML = `<input type="checkbox" id="${prefix}${s}" checked /> <span>${s}</span>`;
+    c.appendChild(row);
+  });
+}
+
+function selected(prefix, stages) {
+  return stages.filter((s) => $(`${prefix}${s}`).checked).join(",");
+}
+
+function setModalityUI() {
+  const m = $("modality").value;
+  $("page_dwi").classList.toggle("hidden", m !== "DWI");
+  $("page_pwi").classList.toggle("hidden", m !== "PWI");
+  $("page_combined").classList.toggle("hidden", m !== "DWI_PWI");
+}
+
+function inferSubjectId(path) {
+  if (!path) return "";
+  const p = path.replace(/\\/g, "/").split("/").filter(Boolean);
+  return p.length ? p[p.length - 1] : "";
+}
+
+function log(msg) {
+  const el = $("log");
+  el.textContent += `\n${msg}`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function setProgress(v) { $("pbar").style.width = `${v}%`; }
+
+function activeContext() {
+  const m = $("modality").value;
+  if (m === "DWI") return { modality: "DWI", sid: $("dwi_subject_id").value.trim(), out: $("dwi_output_root").value.trim() };
+  if (m === "PWI") return { modality: "PWI", sid: $("pwi_subject_id").value.trim(), out: $("pwi_output_root").value.trim() };
+  return { modality: "DWI_PWI", sid: $("c_subject_id").value.trim(), out: $("c_output_root").value.trim() };
+}
+
+function switchTab(tab) {
+  ["preview","log","report"].forEach((t) => {
+    $(`tab_${t}`).classList.toggle("hidden", t !== tab);
+  });
+  document.querySelectorAll(".tab-btn").forEach((b) => {
+    b.classList.remove("tab-active");
+    b.classList.add("tab-inactive");
+    if (b.dataset.tab === tab) { b.classList.remove("tab-inactive"); b.classList.add("tab-active"); }
+  });
+}
+
+async function runPipeline() {
+  const m = $("modality").value;
+  const fd = new FormData();
+  fd.append("modality", m);
+
+  if (m === "DWI") {
+    const path = $("dwi_subject_path").value.trim();
+    const sid = $("dwi_subject_id").value.trim() || inferSubjectId(path);
+    if (!path) { alert("Please set DWI subject folder."); return; }
+    fd.append("raw_root", path);
+    fd.append("subject_id", sid);
+    fd.append("stages", selected("dwi_", STAGES.DWI));
+    fd.append("gpu", $("dwi_gpu").value.trim());
+    fd.append("config", $("dwi_config").value.trim());
+    fd.append("output_root", $("dwi_output_root").value.trim());
+    $("dwi_subject_id").value = sid;
+  } else if (m === "PWI") {
+    const path = $("pwi_subject_path").value.trim();
+    const sid = $("pwi_subject_id").value.trim() || inferSubjectId(path);
+    if (!path) { alert("Please set PWI subject folder."); return; }
+    fd.append("raw_root", path);
+    fd.append("subject_id", sid);
+    fd.append("stages", selected("pwi_", STAGES.PWI));
+    fd.append("gpu", $("pwi_gpu").value.trim());
+    fd.append("config", $("pwi_config").value.trim());
+    fd.append("output_root", $("pwi_output_root").value.trim());
+    $("pwi_subject_id").value = sid;
+  } else {
+    const dwiPath = $("c_dwi_subject_path").value.trim();
+    const pwiPath = $("c_pwi_subject_path").value.trim();
+    const sid = $("c_subject_id").value.trim() || inferSubjectId(dwiPath || pwiPath);
+    if (!dwiPath || !pwiPath) { alert("Please set both DWI and PWI subject folders."); return; }
+    fd.append("subject_id", sid);
+    fd.append("dwi_raw_root", dwiPath);
+    fd.append("pwi_raw_root", pwiPath);
+    fd.append("dwi_stages", selected("cdwi_", STAGES.DWI));
+    fd.append("pwi_stages", selected("cpwi_", STAGES.PWI));
+    fd.append("gpu", $("c_gpu").value.trim());
+    fd.append("dwi_config", $("c_dwi_config").value.trim());
+    fd.append("pwi_config", $("c_pwi_config").value.trim());
+    fd.append("output_root", $("c_output_root").value.trim());
+    $("c_subject_id").value = sid;
+  }
+
+  setProgress(0);
+  $("log").textContent = "[START] running...";
+  switchTab("log");
+
+  const r = await fetch("/api/run", { method: "POST", body: fd });
+  if (!r.ok) {
+    log(`[ERROR] ${await r.text()}`);
+    return;
+  }
+
+  const reader = r.body.getReader();
+  const dec = new TextDecoder();
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    const chunk = dec.decode(value, { stream: true });
+    chunk.split("\n\n").forEach((line) => {
+      if (!line.startsWith("data:")) return;
+      const msg = line.slice(5).trim();
+      if (!msg) return;
+      log(msg);
+      const m = msg.match(/STAGE\s+(\d+)\/(\d+)/i);
+      if (m) setProgress(Math.floor((+m[1] / +m[2]) * 100));
+      if (msg.startsWith("__EXIT__")) setProgress(100);
+    });
+  }
+  await refreshReports();
+}
+
+async function refreshReports() {
+  const ctx = activeContext();
+  if (!ctx.sid) {
+    $("report_info").textContent = "Set subject ID first.";
+    return;
+  }
+
+  const res = await fetch(
+    `/api/outputs?modality=${encodeURIComponent(ctx.modality)}&subject_id=${encodeURIComponent(ctx.sid)}&output_root=${encodeURIComponent(ctx.out || "")}`
+  );
+  if (!res.ok) {
+    $("report_info").textContent = "No outputs found.";
+    $("report_list").innerHTML = "";
+    return;
+  }
+  const j = await res.json();
+  reportFiles = (j.files || []).filter((f) => /\/reporting\//.test(f));
+  $("report_info").textContent = `${ctx.sid}: ${reportFiles.length} reporting file(s)`;
+
+  const list = $("report_list");
+  list.innerHTML = "";
+  reportFiles.sort().forEach((f) => {
+    const a = document.createElement("button");
+    a.className = "w-full text-left text-xs px-2 py-1 rounded hover:bg-slate-800";
+    a.textContent = f.split("/").slice(-1)[0];
+    a.title = f;
+    a.onclick = () => previewFile(f);
+    list.appendChild(a);
+  });
+
+  const nii = (j.files || []).filter((f) => /\.(nii|nii\.gz)$/i.test(f));
+  const base = $("base_select");
+  const overlay = $("overlay_select");
+  base.innerHTML = "";
+  overlay.innerHTML = '<option value="">(none)</option>';
+  nii.forEach((f) => {
+    const opt = document.createElement("option");
+    opt.value = f;
+    opt.textContent = f;
+    base.appendChild(opt);
+    const o2 = opt.cloneNode(true);
+    overlay.appendChild(o2);
+  });
+}
+
+function previewFile(relPath) {
+  const ext = relPath.toLowerCase();
+  const ctx = activeContext();
+  const url = `/api/download?modality=${encodeURIComponent(ctx.modality)}&subject_id=${encodeURIComponent(ctx.sid)}&relpath=${encodeURIComponent(relPath)}&output_root=${encodeURIComponent(ctx.out || "")}`;
+  const box = $("report_preview");
+  if (ext.endsWith(".png") || ext.endsWith(".jpg") || ext.endsWith(".jpeg")) {
+    box.innerHTML = `<img src="${url}" style="max-width:100%;height:auto" />`;
+    return;
+  }
+  if (ext.endsWith(".pdf")) {
+    window.open(url, "_blank");
+    box.innerHTML = `<div class="text-xs">Opened PDF in a new tab:<br>${relPath}</div>`;
+    return;
+  }
+  fetch(url).then(r => r.text()).then(txt => {
+    if (ext.endsWith(".csv")) {
+      const lines = txt.split(/\r?\n/).filter(Boolean).slice(0, 60);
+      const rows = lines.map(l => l.split(","));
+      let html = '<table class="text-xs border-collapse w-full">';
+      rows.forEach((r, i) => {
+        html += '<tr>' + r.map(c => `<${i===0?'th':'td'} class="border border-slate-700 px-1 py-0.5 text-left">${(c||'').replace(/</g,'&lt;')}</${i===0?'th':'td'}>`).join('') + '</tr>';
+      });
+      html += '</table>';
+      box.innerHTML = html;
+    } else {
+      box.innerHTML = `<pre class="text-xs whitespace-pre-wrap">${txt.replace(/</g,'&lt;').slice(0,60000)}</pre>`;
+    }
+  }).catch(err => {
+    box.textContent = `Preview failed: ${err}`;
+  });
+}
+
+async function loadNifti() {
+  const baseRel = $("base_select").value;
+  const ctx = activeContext();
+  const base = baseRel
+    ? `/api/download?modality=${encodeURIComponent(ctx.modality)}&subject_id=${encodeURIComponent(ctx.sid)}&relpath=${encodeURIComponent(baseRel)}&output_root=${encodeURIComponent(ctx.out || "")}`
+    : "";
+  if (!base) return;
+  const overlayRel = $("overlay_select").value;
+  const overlay = overlayRel
+    ? `/api/download?modality=${encodeURIComponent(ctx.modality)}&subject_id=${encodeURIComponent(ctx.sid)}&relpath=${encodeURIComponent(overlayRel)}&output_root=${encodeURIComponent(ctx.out || "")}`
+    : "";
+  const vols = [{ url: base, name: "base", colormap: "gray" }];
+  if (overlay) vols.push({ url: overlay, name: "overlay", opacity: 0.5, colormap: "red" });
+  await nv.loadVolumes(vols);
+}
+
+function init() {
+  mkStages("dwi_stages", "dwi_", STAGES.DWI);
+  mkStages("pwi_stages", "pwi_", STAGES.PWI);
+  mkStages("c_dwi_stages", "cdwi_", STAGES.DWI);
+  mkStages("c_pwi_stages", "cpwi_", STAGES.PWI);
+
+  $("modality").addEventListener("change", setModalityUI);
+  $("run_btn").addEventListener("click", runPipeline);
+  $("refresh_report").addEventListener("click", refreshReports);
+  $("download_all").addEventListener("click", () => {
+    const ctx = activeContext();
+    if (!ctx.sid) return;
+    window.location.href = `/api/download-all?modality=${encodeURIComponent(ctx.modality)}&subject_id=${encodeURIComponent(ctx.sid)}&output_root=${encodeURIComponent(ctx.out || "")}`;
+  });
+  $("load_nifti").addEventListener("click", loadNifti);
+  document.querySelectorAll(".tab-btn").forEach((b) => b.addEventListener("click", () => switchTab(b.dataset.tab)));
+
+  $("dwi_subject_path").addEventListener("change", () => { if (!$("dwi_subject_id").value) $("dwi_subject_id").value = inferSubjectId($("dwi_subject_path").value); });
+  $("pwi_subject_path").addEventListener("change", () => { if (!$("pwi_subject_id").value) $("pwi_subject_id").value = inferSubjectId($("pwi_subject_path").value); });
+  $("c_dwi_subject_path").addEventListener("change", () => { if (!$("c_subject_id").value) $("c_subject_id").value = inferSubjectId($("c_dwi_subject_path").value); });
+  $("c_pwi_subject_path").addEventListener("change", () => { if (!$("c_subject_id").value) $("c_subject_id").value = inferSubjectId($("c_pwi_subject_path").value); });
+
+  setModalityUI();
+
+  nv = new niivue.Niivue({ isResizeCanvas: true });
+  nv.attachTo("nv_canvas");
+}
+
+window.addEventListener("load", init);
+</script>
+</body>
+</html>

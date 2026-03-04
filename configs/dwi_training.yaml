@@ -1,0 +1,42 @@
+# DWI Model Training Configuration
+
+data:
+  train_dir: "data/train"
+  val_dir: "data/val"
+  batch_size: 4
+  num_workers: 4
+  patch_size: [96, 112, 48]
+  normalization: "instance" 
+
+model:
+  architecture: "DAGMNet_CH3"
+  init_features: 32
+  depth: 4
+  pretrained: null
+
+training:
+  epochs: 200
+  learning_rate: 3.0e-4
+  optimizer: "adam"
+  mixed_precision: true
+  early_stopping_patience: 10
+  
+  # Scheduler settings required by training loop
+  scheduler:
+    type: "plateau"
+    mode: "min"
+    factor: 0.5
+    patience: 5
+    min_lr: 1.0e-5
+
+loss:
+  type: "hybrid"
+  weights:
+    dice: 1.0
+    bce: 1.0
+    l1_reg: 1.0e-5
+
+output:
+  save_dir: "outputs/checkpoints"
+  log_dir: "outputs/logs"
+  save_frequency_epochs: 10

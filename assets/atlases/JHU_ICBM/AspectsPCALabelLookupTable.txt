@@ -1,0 +1,8 @@
+PCAL
+PCAR
+ThalamusL
+ThalamusR
+CerebellumL
+CerebellumR
+Pons
+Midbrain

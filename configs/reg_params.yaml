@@ -1,0 +1,16 @@
+# Shared Registration Parameters (ANTs)
+affine:
+  type_of_transform: 'Affine'
+  reg_iterations: [100, 50, 25]
+  shrink_factors: [8, 4, 2]
+  smoothing_sigmas: [3.0, 2.0, 1.0]
+  grad_step: 0.1
+  aff_metric: 'mattes'
+  aff_sampling: 32
+  aff_random_sampling: 1
+
+syn:
+  type_of_transform: 'SyN'
+  reg_iterations: [60, 30, 15]
+  verbose: true
+  # Advanced SyN settings can be added here if needed

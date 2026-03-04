@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>ADS Pipeline | Web Interface</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <!-- Load the local NiiVue script here -->
+  <script src="/static/js/niivue.js"></script>
+  <style>
+    :root { --slate-950:#020617; --cyan-400:#22d3ee; --cyan-500:#06b6d4; --violet-500:#8b5cf6; }
+    body{font-family:'Inter',sans-serif;background-color:var(--slate-950);overflow:hidden}
+    #background-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;opacity:0.7;}
+    .font-mono{font-family:'Roboto Mono',monospace}
+    .glass{background:rgba(15,23,42,.7);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.08)}
+    .spinner{border-top-color:var(--cyan-400);animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .tab-active{border-color:var(--cyan-400);color:#fff;background-color:rgba(34,211,238,.1)}
+    .tab-inactive{border-color:transparent;color:#94a3b8}
+    .progress-bar-bg{background-image:linear-gradient(to right,var(--cyan-500),var(--violet-500))}
+    .btn-primary { background-color: #22d3ee20; color: #22d3ee; border: 1px solid #22d3ee80; transition: background-color 0.2s; }
+    .btn-primary:hover:not(:disabled) { background-color: #22d3ee40; }
+    .btn-primary:disabled { background-color: #47556950; color: #94a3b8; border-color: #64748b80; cursor: not-allowed; }
+    .btn-secondary { background-color: #47556950; border: 1px solid #64748b80; transition: background-color 0.2s; }
+    .btn-secondary:hover { background-color: #64748b50; }
+    /* Custom scrollbar for log */
+    #log-container::-webkit-scrollbar, .overflow-y-auto::-webkit-scrollbar { width: 8px; }
+    #log-container::-webkit-scrollbar-track, .overflow-y-auto::-webkit-scrollbar-track { background: #0f172a80; }
+    #log-container::-webkit-scrollbar-thumb, .overflow-y-auto::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+    #log-container::-webkit-scrollbar-thumb:hover, .overflow-y-auto::-webkit-scrollbar-thumb:hover { background: #64748b; }
+  </style>
+</head>
+<body class="text-slate-300 antialiased">
+<canvas id="background-canvas"></canvas>
+
+<div class="relative w-full h-screen flex flex-col p-4 gap-4">
+  <header class="flex-shrink-0 flex items-center justify-between px-4">
+    <div class="inline-block bg-clip-text text-transparent bg-gradient-to-r from-slate-200 to-slate-400">
+      <h1 class="text-2xl font-bold tracking-tight">ADS Pipeline (DWI / PWI)</h1>
+    </div>
+  </header>
+
+  <main class="flex-grow flex gap-4 overflow-hidden">
+    <!-- LEFT PANEL -->
+    <div class="w-full max-w-md flex-shrink-0 glass p-4 rounded-xl shadow-2xl flex flex-col gap-4 overflow-y-auto">
+      
+      <!-- Subject & Modality -->
+      <div class="bg-black/20 border border-white/10 rounded-lg p-3 space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Modality</label>
+          <select id="modality" class="w-full bg-slate-800/80 border-slate-600 rounded-md text-white py-1.5 text-sm">
+            <option value="DWI">DWI (Diffusion-Weighted Imaging)</option>
+            <option value="PWI">PWI (Perfusion-Weighted Imaging)</option>
+            <option value="DWI_PWI">DWI &amp; PWI (Combined)</option>
+          </select>
+        </div>
+        <div>
+          <label for="subject_id" class="text-xs font-medium text-slate-400 mb-1">Subject ID</label>
+          <input id="subject_id" class="w-full bg-slate-800/80 border-slate-600 rounded-md p-1.5 text-sm" placeholder="e.g., sub-0ab4fbd5"/>
+        </div>
+      </div>
+
+      <!-- Example Subject Selection -->
+      <div class="bg-black/20 border border-white/10 rounded-lg p-3 space-y-2">
+          <label class="flex items-center space-x-2 text-sm font-semibold text-slate-200 cursor-pointer">
+              <input type="checkbox" id="use-example-checkbox" class="h-4 w-4 bg-slate-700 border-slate-500 text-cyan-400 rounded focus:ring-cyan-500"/>
+              <span>Use Example Subject</span>
+          </label>
+          <div id="example-subject-selector" class="hidden pl-6 pt-2">
+              <label for="example-subject-dropdown" class="text-xs font-medium text-slate-400 mb-1">Select Example</label>
+              <select id="example-subject-dropdown" class="w-full bg-slate-800/80 border-slate-600 rounded-md text-white py-1.5 text-sm"></select>
+          </div>
+      </div>
+
+      <!-- Data Upload Section -->
+      <div id="upload-section" class="bg-black/20 border border-white/10 rounded-lg p-3 space-y-2">
+        <h3 class="text-sm font-semibold text-slate-200">Upload Raw Data</h3>
+        <p class="text-xs text-slate-500 pb-2">Provide a Subject ID. Files should be named correctly (e.g., sub-ID_DWI.nii.gz).</p>
+        <div id="file-upload-slots" class="space-y-2"></div>
+        <button id="upload-btn" class="w-full mt-2 px-3 py-1.5 text-sm btn-primary rounded" disabled>Upload Selected Files</button>
+      </div>
+      
+      <!-- Raw Root Override -->
+      <div id="raw-root-section" class="bg-black/20 border border-white/10 rounded-lg p-3 space-y-2">
+        <h3 class="text-sm font-semibold text-slate-200">Raw Data Folder Override</h3>
+        <input id="raw-root-input" type="text" class="w-full bg-slate-800/80 border-slate-600 rounded-md p-1.5 text-sm" placeholder="/abs/path/on/server (optional)"/>
+        <p class="text-xs text-slate-500">Leave empty to use uploaded data or examples.</p>
+      </div>
+
+      <div id="combined-raw-root-section" class="hidden bg-black/20 border border-white/10 rounded-lg p-3 space-y-2">
+        <h3 class="text-sm font-semibold text-slate-200">Combined Raw Data Folders</h3>
+        <div>
+          <label for="dwi-raw-root-input" class="text-xs font-medium text-slate-400">DWI Subject Folder</label>
+          <input id="dwi-raw-root-input" type="text" class="mt-1 w-full bg-slate-800/80 border-slate-600 rounded-md p-1.5 text-sm" placeholder="/abs/path/to/dwi/sub-xxxx"/>
+        </div>
+        <div>
+          <label for="pwi-raw-root-input" class="text-xs font-medium text-slate-400">PWI Subject Folder</label>
+          <input id="pwi-raw-root-input" type="text" class="mt-1 w-full bg-slate-800/80 border-slate-600 rounded-md p-1.5 text-sm" placeholder="/abs/path/to/pwi/sub-xxxx"/>
+        </div>
+        <p class="text-xs text-slate-500">If empty, server will try examples/uploads by Subject ID.</p>
+      </div>
+
+      <!-- Stages -->
+      <div id="stages-container" class="bg-black/20 border border-white/10 rounded-lg p-3"></div>
+
+      <!-- Advanced -->
+      <div class="bg-black/20 border border-white/10 rounded-lg p-3 space-y-3">
+        <h3 class="text-sm font-semibold text-slate-200">Advanced</h3>
+        <div>
+          <label for="gpu_id" class="text-xs font-medium text-slate-400">GPU ID</label>
+          <input id="gpu_id" value="1" placeholder="e.g., 1" class="mt-1 w-full bg-slate-800/80 border-slate-600 rounded-md p-1.5 text-sm"/>
+        </div>
+      </div>
+
+      <!-- Run Controls -->
+      <div class="mt-auto pt-4 flex items-center gap-2">
+        <button id="run-button" class="w-full flex justify-center items-center px-4 py-2 text-sm font-semibold rounded-md shadow-lg text-white bg-gradient-to-r from-cyan-500 to-violet-500 hover:from-cyan-400 hover:to-violet-400">
+          <svg id="run-icon" class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>
+          <div id="run-spinner" class="spinner w-5 h-5 mr-2 border-2 border-transparent rounded-full hidden"></div>
+          <span id="run-button-text">Run Pipeline</span>
+        </button>
+      </div>
+      <div class="w-full bg-black/20 rounded-full h-1.5 border border-white/10">
+        <div id="progress-bar" class="progress-bar-bg h-full rounded-full transition-all duration-500 ease-out" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="flex-grow glass rounded-xl shadow-2xl flex flex-col">
+      <div class="flex-shrink-0 border-b border-white/10 px-4">
+        <nav class="flex space-x-2" id="tabs">
+          <button data-tab="preview" class="px-3 py-2 font-medium text-sm rounded-t-md border-b-2 tab-active">Preview</button>
+          <button data-tab="log" class="px-3 py-2 font-medium text-sm rounded-t-md border-b-2 tab-inactive">Log</button>
+          <button data-tab="outputs" class="px-3 py-2 font-medium text-sm rounded-t-md border-b-2 tab-inactive">Outputs</button>
+        </nav>
+      </div>
+
+      <div class="flex-grow p-4 overflow-y-auto">
+        <!-- PREVIEW -->
+        <div id="tab-content-preview">
+            <div class="h-full flex flex-col gap-4">
+                <div class="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                        <label class="text-xs font-medium text-slate-400">Base NIfTI</label>
+                        <select id="base-select" class="mt-1 w-full bg-slate-800/80 border-slate-600 rounded-md p-1.5 text-sm"></select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-medium text-slate-400">Overlay (opt.)</label>
+                        <select id="overlay-select" class="mt-1 w-full bg-slate-800/80 border-slate-600 rounded-md p-1.5 text-sm"><option value="">(none)</option></select>
+                    </div>
+                    <div class="flex items-end">
+                        <button id="load-nifti" class="w-full px-3 py-1.5 btn-primary rounded">Load</button>
+                    </div>
+                </div>
+                <div class="flex-grow bg-black/30 rounded-lg border border-white/10 flex items-center justify-center min-h-[400px]">
+                    <canvas id="nv-canvas" class="w-full h-full"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- LOG -->
+        <div id="tab-content-log" class="hidden">
+          <div id="log-container" class="w-full h-full bg-black/30 rounded-lg p-3 font-mono text-xs text-slate-300 overflow-y-auto border border-white/10 max-h-[70vh]">
+            <p class="text-slate-500">> Waiting for pipeline to start...</p>
+          </div>
+        </div>
+
+        <!-- OUTPUTS -->
+        <div id="tab-content-outputs" class="hidden">
+          <div class="bg-black/20 border border-white/10 rounded-lg p-3">
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="text-sm font-semibold text-slate-200">Output Files</h3>
+              <button id="download-all" class="flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Download All (.zip)
+              </button>
+            </div>
+            <div class="flex items-center gap-2 mb-2">
+              <button id="refresh-outputs" class="px-2 py-1 text-xs btn-secondary rounded">Refresh Outputs</button>
+              <span id="output-subject-info" class="text-xs text-slate-500"></span>
+            </div>
+            <div id="output-file-list" class="space-y-1 text-sm max-h-[60vh] overflow-y-auto"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// Using a standard script now, not a module
+// ====== App State & Elements ======
+const state = {
+  files: {}, // Holds files for upload
+  exampleSubjects: { DWI: [], PWI: [] }, // Holds example subject IDs
+};
+let nv = null;
+const $ = (id) => document.getElementById(id);
+
+// ====== DATA SCHEMAS ======
+const STAGES = {
+  DWI: [ { id: 'prepdata', label: 'Preprocessing' }, { id: 'gen_mask', label: 'Brain mask' }, { id: 'skull_strip', label: 'Skull strip' }, { id: 'registration', label: 'Registration' }, { id: 'inference', label: 'Inference' }, { id: 'postprocessing', label: 'Postprocess' }, { id: 'report', label: 'Reporting' } ],
+  PWI: [ { id: 'prepdata', label: 'Preprocessing' }, { id: 'gen_mask', label: 'Brain mask' }, { id: 'skull_strip', label: 'Skull strip' }, { id: 'gen_ttp', label: 'Generate TTP' }, { id: 'registration', label: 'Registration' }, { id: 'ttpadc_coreg', label: 'TTP-ADC Coreg' }, { id: 'inference', label: 'Inference' }, { id: 'report', label: 'Reporting' } ],
+  DWI_PWI: []
+};
+const REQUIRED_FILES = {
+  DWI: [ { id: 'dwi', label: 'DWI Image (*_DWI.nii.gz)', required: true }, { id: 'adc', label: 'ADC Image (*_ADC.nii.gz)', required: true }, { id: 'b0', label: 'b0 Image (*_b0.nii.gz)', required: true }, { id: 'stroke', label: 'Stroke Mask (optional)', required: false } ],
+  PWI: [ { id: 'pwi', label: 'PWI 4D Image (*_PWI.nii.gz)', required: true }, { id: 'dwi', label: 'DWI Image (*_DWI.nii.gz)', required: true }, { id: 'adc', label: 'ADC Image (*_ADC.nii.gz)', required: true } ],
+  DWI_PWI: []
+};
+
+// ====== UI RENDERING ======
+function renderPipelineStages() {
+  const modality = $('modality').value;
+  const container = $('stages-container');
+  if (modality === 'DWI_PWI') {
+    container.innerHTML = `
+      <h3 class="text-sm font-semibold text-slate-200">Pipeline Stages (DWI &amp; PWI)</h3>
+      <div class="pt-2">
+        <p class="text-xs font-semibold text-slate-300 mb-1">DWI</p>
+        <div id="dwi-stage-grid" class="grid grid-cols-2 gap-2"></div>
+      </div>
+      <div class="pt-2">
+        <p class="text-xs font-semibold text-slate-300 mb-1">PWI</p>
+        <div id="pwi-stage-grid" class="grid grid-cols-2 gap-2"></div>
+      </div>
+    `;
+    const dwiGrid = $('dwi-stage-grid');
+    const pwiGrid = $('pwi-stage-grid');
+    STAGES.DWI.forEach((s, i) => {
+      dwiGrid.innerHTML += `
+        <label class="flex items-center p-1 rounded-md hover:bg-white/5 text-xs cursor-pointer">
+          <input id="dwi-stage-${s.id}" type="checkbox" checked class="stage-checkbox-dwi mr-2 h-4 w-4 bg-slate-700 border-slate-500 text-cyan-400 rounded focus:ring-cyan-500"/>
+          <span>${i + 1}. ${s.label}</span>
+        </label>`;
+    });
+    STAGES.PWI.forEach((s, i) => {
+      pwiGrid.innerHTML += `
+        <label class="flex items-center p-1 rounded-md hover:bg-white/5 text-xs cursor-pointer">
+          <input id="pwi-stage-${s.id}" type="checkbox" checked class="stage-checkbox-pwi mr-2 h-4 w-4 bg-slate-700 border-slate-500 text-cyan-400 rounded focus:ring-cyan-500"/>
+          <span>${i + 1}. ${s.label}</span>
+        </label>`;
+    });
+    return;
+  }
+  container.innerHTML = `<h3 class="text-sm font-semibold text-slate-200">Pipeline Stages (${modality})</h3>`;
+  const grid = document.createElement('div');
+  grid.className = 'grid grid-cols-2 gap-2 pt-1';
+  STAGES[modality].forEach((s, i) => {
+    grid.innerHTML += `
+      <label class="flex items-center p-1 rounded-md hover:bg-white/5 text-xs cursor-pointer">
+        <input id="stage-${s.id}" type="checkbox" checked class="stage-checkbox mr-2 h-4 w-4 bg-slate-700 border-slate-500 text-cyan-400 rounded focus:ring-cyan-500"/>
+        <span>${i + 1}. ${s.label}</span>
+      </label>`;
+  });
+  container.appendChild(grid);
+}
+
+function renderFileUploads() {
+  const modality = $('modality').value;
+  const container = $('file-upload-slots');
+  container.innerHTML = '';
+  state.files = {}; // Reset files on modality change
+  if (modality === 'DWI_PWI') {
+    container.innerHTML = '<p class="text-xs text-slate-500">Combined mode does not use single upload panel. Set DWI/PWI folders below.</p>';
+    $('upload-btn').disabled = true;
+    return;
+  }
+  REQUIRED_FILES[modality].forEach(fileInfo => {
+    const isRequired = fileInfo.required ? '<span class="text-red-400">*</span>' : '';
+    const slot = document.createElement('div');
+    slot.innerHTML = `
+      <label class="block text-xs font-medium text-slate-400 mb-1">${fileInfo.label} ${isRequired}</label>
+      <div class="flex items-center gap-2">
+        <button data-file-id="${fileInfo.id}" class="w-full px-3 py-1.5 text-sm btn-secondary rounded file-picker-btn">Choose File...</button>
+        <span id="filename-${fileInfo.id}" class="text-xs text-slate-500 truncate w-full">No file selected.</span>
+      </div>
+      <input id="file-input-${fileInfo.id}" type="file" class="hidden" accept=".nii,.nii.gz"/>`;
+    container.appendChild(slot);
+  });
+  checkUploadButtonState();
+}
+
+function populateExampleSubjectsDropdown() {
+    const modality = $('modality').value;
+    const dropdown = $('example-subject-dropdown');
+    if (modality === 'DWI_PWI') {
+        const dwiSet = new Set((state.exampleSubjects && state.exampleSubjects.DWI) || []);
+        const pwi = (state.exampleSubjects && state.exampleSubjects.PWI) || [];
+        const subjects = pwi.filter(x => dwiSet.has(x));
+        dropdown.innerHTML = '';
+        if (subjects.length === 0) {
+            dropdown.innerHTML = '<option>No shared DWI/PWI examples found</option>';
+            dropdown.disabled = true;
+        } else {
+            subjects.forEach(subId => {
+                dropdown.innerHTML += `<option value="${subId}">${subId}</option>`;
+            });
+            dropdown.disabled = false;
+            if ($('use-example-checkbox').checked) {
+                $('subject_id').value = dropdown.value;
+                const sid = dropdown.value;
+                $('dwi-raw-root-input').value = `/app/assets/examples/dwi/${sid}`;
+                $('pwi-raw-root-input').value = `/app/assets/examples/pwi/${sid}`;
+            }
+        }
+        return;
+    }
+    const subjects = state.exampleSubjects ? state.exampleSubjects[modality] || [] : [];
+    dropdown.innerHTML = '';
+    if (subjects.length === 0) {
+        dropdown.innerHTML = '<option>No examples found</option>';
+        dropdown.disabled = true;
+    } else {
+        subjects.forEach(subId => {
+            dropdown.innerHTML += `<option value="${subId}">${subId}</option>`;
+        });
+        dropdown.disabled = false;
+        if ($('use-example-checkbox').checked) {
+            $('subject_id').value = dropdown.value;
+        }
+    }
+}
+
+function log(msg, clear = false) {
+  if (clear) $('log-container').innerHTML = '';
+  const ts = new Date().toLocaleTimeString();
+  const p = document.createElement('p');
+  p.innerHTML = `<span class="text-slate-500 mr-2">[${ts}]</span><span class="text-slate-300">${msg.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span>`;
+  $('log-container').appendChild(p);
+  $('log-container').scrollTop = $('log-container').scrollHeight;
+}
+
+// ====== UI STATE MANAGEMENT ======
+function setProgress(pct) { $('progress-bar').style.width = `${pct}%`; }
+
+function checkUploadButtonState() {
+    const modality = $('modality').value;
+    if (modality === 'DWI_PWI') {
+        $('upload-btn').disabled = true;
+        return;
+    }
+    const required = REQUIRED_FILES[modality].filter(f => f.required);
+    const allRequiredPresent = required.every(f => state.files[f.id]);
+    $('upload-btn').disabled = !allRequiredPresent;
+}
+
+function toggleDataInput(useExample) {
+    const modality = $('modality').value;
+    $('example-subject-selector').classList.toggle('hidden', !useExample);
+    const isCombined = modality === 'DWI_PWI';
+    $('upload-section').classList.toggle('hidden', useExample || isCombined);
+    $('raw-root-section').classList.toggle('hidden', useExample || isCombined);
+    $('combined-raw-root-section').classList.toggle('hidden', !isCombined);
+    if (useExample) {
+        $('subject_id').value = $('example-subject-dropdown').value || '';
+        $('subject_id').readOnly = true;
+        if (isCombined && $('subject_id').value) {
+            const sid = $('subject_id').value;
+            $('dwi-raw-root-input').value = `/app/assets/examples/dwi/${sid}`;
+            $('pwi-raw-root-input').value = `/app/assets/examples/pwi/${sid}`;
+        }
+    } else {
+        $('subject_id').value = '';
+        $('subject_id').readOnly = false;
+    }
+}
+
+// ====== API CALLS ======
+async function fetchExampleSubjects() {
+    try {
+        const response = await fetch('/api/example-subjects');
+        if (!response.ok) throw new Error('Failed to fetch examples.');
+        state.exampleSubjects = await response.json();
+        populateExampleSubjectsDropdown();
+    } catch (error) {
+        console.error('Error fetching example subjects:', error);
+        log(`❌ Could not load example subjects: ${error.message}`);
+    }
+}
+
+// ====== EVENT HANDLERS ======
+function handleModalityChange() {
+    renderPipelineStages();
+    renderFileUploads();
+    populateExampleSubjectsDropdown();
+    toggleDataInput($('use-example-checkbox').checked);
+}
+$('modality').addEventListener('change', handleModalityChange);
+
+$('tabs').addEventListener('click', (e) => {
+  if (e.target.tagName !== 'BUTTON') return;
+  $('tabs').querySelectorAll('button').forEach(b => b.classList.replace('tab-active', 'tab-inactive'));
+  e.target.classList.replace('tab-inactive', 'tab-active');
+  ['preview', 'log', 'outputs'].forEach(id => $(`tab-content-${id}`).classList.add('hidden'));
+  $(`tab-content-${e.target.dataset.tab}`).classList.remove('hidden');
+});
+
+$('use-example-checkbox').addEventListener('change', (e) => toggleDataInput(e.target.checked));
+$('example-subject-dropdown').addEventListener('change', (e) => {
+  $('subject_id').value = e.target.value;
+  if ($('modality').value === 'DWI_PWI') {
+    const sid = e.target.value;
+    $('dwi-raw-root-input').value = `/app/assets/examples/dwi/${sid}`;
+    $('pwi-raw-root-input').value = `/app/assets/examples/pwi/${sid}`;
+  }
+});
+
+$('file-upload-slots').addEventListener('click', (e) => { if (e.target.classList.contains('file-picker-btn')) { $(`file-input-${e.target.dataset.fileId}`).click(); } });
+$('file-upload-slots').addEventListener('change', (e) => {
+    if (e.target.type === 'file' && e.target.id.startsWith('file-input-')) {
+        const fileId = e.target.id.replace('file-input-', '');
+        const file = e.target.files[0];
+        if (file) {
+            state.files[fileId] = file;
+            $(`filename-${fileId}`).textContent = file.name;
+        } else {
+            delete state.files[fileId];
+            $(`filename-${fileId}`).textContent = 'No file selected.';
+        }
+        checkUploadButtonState();
+    }
+});
+
+$('upload-btn').addEventListener('click', async () => {
+    const subjectId = $('subject_id').value.trim();
+    if (!subjectId) { alert('Please provide a Subject ID before uploading.'); return; }
+    const fd = new FormData();
+    fd.append('modality', $('modality').value);
+    fd.append('subject_id', subjectId);
+    let fileCount = 0;
+    for (const fileId in state.files) { fd.append('files', state.files[fileId], state.files[fileId].name); fileCount++; }
+    if (fileCount === 0) { alert('No files selected for upload.'); return; }
+    log(`Uploading ${fileCount} files for subject '${subjectId}'...`);
+    try {
+        const r = await fetch('/api/upload-subject', { method: 'POST', body: fd });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.detail || 'Upload failed.');
+        log(`✔ ${j.message}`);
+        $('raw-root-input').value = j.saved_root || '';
+    } catch (err) { log(`❌ Upload Error: ${err.message}`); alert(`Upload Error: ${err.message}`); }
+});
+
+$('run-button').addEventListener('click', async () => {
+  $('run-button').disabled = true; $('run-icon').classList.add('hidden'); $('run-spinner').classList.remove('hidden');
+  log('Starting pipeline...', true); setProgress(0);
+  const fd = new FormData();
+  fd.append('modality', $('modality').value);
+  const sid = $('subject_id').value.trim();
+  if (sid) fd.append('subject_id', sid);
+  if ($('modality').value === 'DWI_PWI') {
+    const dwiRoot = $('dwi-raw-root-input').value.trim();
+    const pwiRoot = $('pwi-raw-root-input').value.trim();
+    if (dwiRoot) fd.append('dwi_raw_root', dwiRoot);
+    if (pwiRoot) fd.append('pwi_raw_root', pwiRoot);
+    const dwiStages = Array.from(document.querySelectorAll('.stage-checkbox-dwi:checked')).map(cb => cb.id.replace('dwi-stage-', ''));
+    const pwiStages = Array.from(document.querySelectorAll('.stage-checkbox-pwi:checked')).map(cb => cb.id.replace('pwi-stage-', ''));
+    fd.append('dwi_stages', dwiStages.join(','));
+    fd.append('pwi_stages', pwiStages.join(','));
+  } else {
+    const rr = $('raw-root-input').value.trim();
+    if (rr) fd.append('raw_root', rr);
+    const selectedStages = Array.from(document.querySelectorAll('.stage-checkbox:checked')).map(cb => cb.id.replace('stage-', ''));
+    fd.append('stages', selectedStages.join(','));
+  }
+  fd.append('gpu', ($('gpu_id').value || '').trim());
+  try {
+    const resp = await fetch('/api/run', { method: 'POST', body: fd });
+    if (!resp.ok) throw new Error(`Failed to start: ${await resp.text()}`);
+    const reader = resp.body.getReader(); const dec = new TextDecoder(); let pct = 0;
+    while (true) {
+      const { value, done } = await reader.read(); if (done) break;
+      dec.decode(value, { stream: true }).split("\n\n").forEach(line => {
+        if (!line.startsWith("data:")) return;
+        const msg = line.slice(5).trim();
+        if (msg.startsWith("__EXIT__")) {
+          const code = msg.split(":")[1];
+          log(`✅ Process exited with code ${code}.`); setProgress(100); refreshOutputs();
+        } else {
+          log(msg);
+          const m = msg.match(/Stage (\d+)\/(\d+)/);
+          if (m) { pct = Math.max(pct, Math.floor((+m[1] / +m[2]) * 100)); setProgress(pct); }
+        }
+      });
+    }
+  } catch (err) { log(`❌ Error: ${err.message}`); setProgress(0);
+  } finally { $('run-button').disabled = false; $('run-icon').classList.remove('hidden'); $('run-spinner').classList.add('hidden'); }
+});
+
+// ====== Outputs & Viewer Handlers ======
+
+/** 2. New helper functions for creating a file tree view. */
+function buildFileTree(paths) {
+    const tree = {};
+    const subjectId = $('subject_id').value.trim();
+    if (!subjectId) return tree;
+
+    paths.forEach(fullPath => {
+        let currentNode = tree;
+        const parts = fullPath.split('/');
+        const sidIndex = parts.indexOf(subjectId);
+        // Start the tree view from within the subject's folder
+        const displayParts = sidIndex !== -1 ? parts.slice(sidIndex + 1) : parts;
+
+        displayParts.forEach((part, index, arr) => {
+            if (index === arr.length - 1) { // It's a file
+                currentNode[part] = { _isLeaf: true, fullPath: fullPath };
+            } else { // It's a directory
+                currentNode[part] = currentNode[part] || {};
+                currentNode = currentNode[part];
+            }
+        });
+    });
+    return tree;
+}
+
+function renderFileTree(node, level = 0) {
+    const modality = $('modality').value;
+    const subjectId = $('subject_id').value.trim();
+
+    const keys = Object.keys(node).sort((a, b) => {
+        const aIsFile = node[a]._isLeaf;
+        const bIsFile = node[b]._isLeaf;
+        if (aIsFile && !bIsFile) return 1;
+        if (!aIsFile && bIsFile) return -1;
+        return a.localeCompare(b);
+    });
+
+    let html = '';
+    keys.forEach(key => {
+        const item = node[key];
+        const indentClass = `pl-${level * 4}`; // Tailwind class for indentation
+
+        if (item._isLeaf) { // It's a file
+            const downloadHref = `/api/download?modality=${modality}&subject_id=${subjectId}&relpath=${encodeURIComponent(item.fullPath)}`;
+            html += `
+                <div class="flex items-center justify-between p-1.5 rounded hover:bg-white/5 ${indentClass}">
+                  <span class="text-slate-300 truncate flex items-center gap-2">
+                    <svg class="w-4 h-4 text-slate-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                    ${key}
+                  </span>
+                  <a class="text-xs text-cyan-400 hover:text-cyan-300 flex-shrink-0 ml-2" href="${downloadHref}" download>Download</a>
+                </div>`;
+        } else { // It's a directory
+            html += `
+                <div class="font-medium text-slate-200 pt-2 flex items-center gap-2 ${indentClass}">
+                  <svg class="w-5 h-5 text-cyan-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+                  ${key}
+                </div>`;
+            html += renderFileTree(item, level + 1);
+        }
+    });
+    return html;
+}
+
+/** 3. Updated refreshOutputs to use the new tree view. */
+async function refreshOutputs() {
+  const modality = $('modality').value; const sid = $('subject_id').value.trim();
+  if (!sid) { $('output-file-list').innerHTML = '<p class="text-xs text-slate-500">Enter a Subject ID to see outputs.</p>'; return; }
+  $('output-subject-info').textContent = `Showing outputs for: ${sid}`;
+  const outList = $('output-file-list'); const baseSel = $('base-select'); const overlaySel = $('overlay-select');
+  outList.innerHTML = '<p class="text-xs text-slate-500">Loading...</p>'; baseSel.innerHTML = ''; overlaySel.innerHTML = '<option value="">(none)</option>';
+  try {
+    const r = await fetch(`/api/outputs?modality=${modality}&subject_id=${sid}`);
+    if (!r.ok) throw new Error('No outputs found.');
+    const j = await r.json(); outList.innerHTML = '';
+    
+    // Build and render file tree
+    const fileTree = buildFileTree(j.files);
+    outList.innerHTML = renderFileTree(fileTree);
+
+    // Still populate the dropdowns for the viewer with all NIfTI files
+    j.files.sort().forEach(projectRelPath => {
+      if (/\.(nii|nii\.gz)$/i.test(projectRelPath)) {
+        const viewableUrl = `/files/${projectRelPath}`;
+        // Add the full path to the option text for clarity if names conflict
+        const optionText = `${projectRelPath.replace(/^output\/[^\/]+\/[^\/]+\//, '')}`;
+        baseSel.innerHTML += `<option value="${viewableUrl}">${optionText}</option>`; 
+        overlaySel.innerHTML += `<option value="${viewableUrl}">${optionText}</option>`;
+      }
+    });
+    if (j.files.length === 0) { outList.innerHTML = '<p class="text-xs text-slate-500">No output files generated yet.</p>'; }
+  } catch (err) { outList.innerHTML = `<p class="text-xs text-red-400">${err.message}</p>`; }
+}
+
+$('refresh-outputs').addEventListener('click', refreshOutputs);
+$('download-all').addEventListener('click', (e) => {
+  e.preventDefault(); const sid = $('subject_id').value.trim();
+  if (!sid) { alert('Please enter a Subject ID.'); return; }
+  location.href = `/api/download-all?modality=${$('modality').value}&subject_id=${sid}`;
+});
+$('load-nifti').addEventListener('click', async () => {
+  if (!nv) { log('NiiVue viewer not initialized yet.'); return; }
+  const base = $('base-select').value; 
+  const overlay = $('overlay-select').value;
+  if (!base) { log('Select a base NIfTI from the outputs.'); return; }
+  
+  log(`Loading base: ${base.split('/').pop()}`);
+  const vols = [{ url: base, name: 'base', colormap: 'gray' }];
+  
+  if (overlay) { 
+    log(`Loading overlay: ${overlay.split('/').pop()}`);
+    vols.push({ url: overlay, name: 'overlay', opacity: 0.5, colormap: 'red' }); 
+  }
+  await nv.loadVolumes(vols);
+});
+
+// ====== Background Animation ======
+const bg = $('background-canvas'), ct = bg.getContext('2d'); let dots=[];
+class Dot{constructor(){this.x=Math.random()*bg.width;this.y=Math.random()*bg.height;this.vx=Math.random()*0.4-0.2;this.vy=Math.random()*0.4-0.2;this.r=Math.random()*1.5+0.5}u(){this.x+=this.vx;this.y+=this.vy;if(this.x<0||this.x>bg.width)this.vx*=-1;if(this.y<0||this.y>bg.height)this.vy*=-1}d(){ct.beginPath();ct.arc(this.x,this.y,this.r,0,Math.PI*2);ct.fillStyle='rgba(255,255,255,.5)';ct.fill()}}
+function seed(){dots=[];const n=Math.floor((bg.width*bg.height)/15000);for(let i=0;i<n;i++)dots.push(new Dot())}
+function resize(){bg.width=innerWidth;bg.height=innerHeight;seed()}
+function link(){for(let i=0;i<dots.length;i++){for(let j=i;j<dots.length;j++){const dx=dots[i].x-dots[j].x,dy=dots[i].y-dots[j].y,dd=Math.hypot(dx,dy);if(dd<120){ct.beginPath();ct.moveTo(dots[i].x,dots[i].y);ct.lineTo(dots[j].x,dots[j].y);ct.strokeStyle=`rgba(255,255,255,${1-dd/120})`;ct.lineWidth=.3;ct.stroke()}}}}
+let hue=200; (function anim(){requestAnimationFrame(anim);hue+=.1;ct.clearRect(0,0,bg.width,bg.height);const g=ct.createLinearGradient(0,0,bg.width,bg.height);g.addColorStop(0,`hsl(${hue},80%,10%)`);g.addColorStop(1,`hsl(${hue+60},80%,5%)`);ct.fillStyle=g;ct.fillRect(0,0,bg.width,bg.height);dots.forEach(p=>{p.u();p.d()});link()})();
+
+// ====== Initial Load ======
+window.onload = async () => {
+    handleModalityChange();
+    await fetchExampleSubjects();
+    // The UMD script creates a global 'niivue' object
+    nv = new niivue.Niivue({ isResizeCanvas: true, loadingText: "Loading NIfTI..." });
+    await nv.attachTo('nv-canvas');
+    resize(); 
+    addEventListener('resize',resize);
+};
+</script>
+</body>
+</html>

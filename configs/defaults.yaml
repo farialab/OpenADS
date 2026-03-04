@@ -1,0 +1,44 @@
+# Global Project Defaults
+metadata:
+  project_name: "OpenADS"
+  version: "2.1"
+
+resources:
+  gpu_id: "0"
+  num_threads: 4
+  verbose: true
+
+paths:
+  project_root: "${PROJECT_ROOT}"
+  assets_dir: "${PROJECT_ROOT}/assets"
+  output_root: "${PROJECT_ROOT}/output"
+  
+  templates:
+    root: "${PROJECT_ROOT}/assets/atlases/JHU_ICBM"
+    mask: "JHU_MNI_SS_DWI_mask_to_MNI.nii"
+    adc: "JHU_MNI_SS_ADC_ss_to_MNI.nii"
+    dwi: "JHU_MNI_SS_DWI_to_MNI.nii"
+  
+  models:
+    root: "${PROJECT_ROOT}/assets/models"
+    aa_models: "${PROJECT_ROOT}/assets/models/AA_models"
+    synthstrip: "${PROJECT_ROOT}/assets/models/synthstrip.nocsf.1.pt"
+
+registration:
+  affine:
+    type_of_transform: 'Affine'
+    reg_iterations: [1000, 500, 250, 100]
+    shrink_factors: [8, 4, 2, 1]
+    smoothing_sigmas: [3, 2, 1, 0]
+    grad_step: 0.1
+    metric: 'mattes'
+    sampling: 32
+  syn:
+    type_of_transform: 'SyN'
+    reg_iterations: [100, 70, 50, 20]
+    metric: 'CC'
+    verbose: true
+
+cleanup:
+  enabled: true
+  keep_manifest: "${PROJECT_ROOT}/configs/keep_files.yaml"
