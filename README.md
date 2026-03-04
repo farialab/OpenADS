@@ -402,10 +402,3 @@ Add your license text or reference here.
 
 ## Citation
 
-If you publish research using OpenADS, include a citation section here and consider adding a `CITATION.cff`.
-
-```
-
-If you upload “all output examples” (even just one representative subject for DWI and PWI), I can tighten the README by adding an accurate “Outputs” section with real file tree snippets and a short “What you should see after a successful run” checklist, which usually saves a lot of debugging time.
-```
-
