@@ -107,9 +107,11 @@ You can override the output base with `--output-root` in:
 
 Cleanup and keep behavior is controlled by `configs/keep_files.yaml`. 
 
-## Example output tree. 
-This is a real example tree for output/sub-05a971ae (trimmed only for display):
-'''
+## Example output tree
+
+This is a real example tree for `output/sub-05a971ae` (trimmed for display):
+
+```
 output/sub-05a971ae
 ├── DWI
 │   ├── preprocess
@@ -121,8 +123,7 @@ output/sub-05a971ae
     ├── registration
     ├── reporting
     └── segmentation
-
-'''
+```
 
 ## Running OpenADS
 
