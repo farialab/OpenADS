@@ -26,8 +26,12 @@ Run commands from the OpenADS project root.
 Create and activate your environment:
 
 ```bash
-source XXXX/bin/activate
-````
+python -m venv openads
+source openads/bin/activate
+
+python -m pip install -U pip
+python -m pip install .
+```
 
 Run a full DWI pipeline on an example subject:
 
@@ -60,17 +64,21 @@ OpenADS can be run as:
 * Local scripts and Python entrypoints
 * A package CLI via `python -m ads.cli`
 * A web API and GUI launcher via Uvicorn
-* Docker images (CPU and GPU) 
+* Docker images (CPU and GPU)
 
-### Option A: Install from source (recommended for now)
+### Option A: Install from source (recommended)
 
-Clone the repository and install:
+Clone the repository and create a dedicated virtual environment:
 
 ```bash
 git clone https://github.com/farialab/OpenADS.git
 cd OpenADS
-pip install -U pip
-pip install .
+
+python -m venv openads
+source openads/bin/activate
+
+python -m pip install -U pip
+python -m pip install .
 ```
 Sanity check:
 
@@ -83,8 +91,12 @@ Use editable mode if you are making changes to the code:
 ```bash
 git clone https://github.com/farialab/OpenADS.git
 cd OpenADS
-pip install -U pip
-pip install -e .
+
+python -m venv openads
+source openads/bin/activate
+
+python -m pip install -U pip
+python -m pip install -e .
 ```
 Developer sanity checks:
 
@@ -148,8 +160,6 @@ PWI single subject:
 ./scripts/run_pwi.sh assets/examples/pwi/sub-02e8eb42 --stages prepdata,gen_mask,skull_strip,gen_ttp,registration,ttpadc_coreg,inference,report --gpu 1
 ./scripts/run_pwi.sh /data/pwi/sub-0037761d --stages prepdata,gen_mask,skull_strip,gen_ttp,registration,ttpadc_coreg,inference,report --gpu 1 --output-root /output
 ```
-
-
 
 ### Option 2: Combined wrapper
 

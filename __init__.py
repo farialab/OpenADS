@@ -13,7 +13,7 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 __version__ = "1.0.0"
-__author__ = "Andreia V. Faria, Chin-Fu Liu, Joshua Liu"
+__author__ = "Joshua Shun Liu, Chin-Fu Liu, Andreia V. Faria"
 
 __all__ = [
     "__version__",

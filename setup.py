@@ -4,7 +4,7 @@ setup(
     name="ads",
     version="1.0.0",
     description="Acute Stroke Detection (ADS) - A tool for automated brain lesion detection",
-    author="Original Authors: Andreia V. Faria, Chin-Fu Liu; Torch-based Extension Implementation: Andreia V. Faria, Joshua Liu",
+    author="Authors: Joshua Shun Liu, Chin-Fu Liu, Andreia V. Faria",
     author_email="andreia.faria@gmail.com",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
@@ -26,6 +26,7 @@ setup(
         "nibabel",
         "tqdm",
         "scikit-learn",
+        "surfa"
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
