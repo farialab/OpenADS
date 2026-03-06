@@ -26,7 +26,8 @@ setup(
         "nibabel>=5.3,<5.4",
         "tqdm>=4.67,<4.68",
         "scikit-learn>=1.7,<1.8",
-        "surfa>=0.6.3,<0.7"
+        "surfa>=0.6.3,<0.7",
+        "shap == 0.50.0"
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
