@@ -30,7 +30,7 @@ python -m venv openads
 source openads/bin/activate
 
 python -m pip install -U pip
-python -m pip install .
+python -m pip install torch==2.5.1 numpy==2.0.1 antspyx==0.5.4 pandas==2.2.3 matplotlib==3.9.2 scikit-image==0.24.0 scipy==1.13.1 nibabel==5.3.2 tqdm==4.67.1 scikit-learn==1.7.2 surfa==0.6.3
 ```
 
 Run a full DWI pipeline on an example subject:
