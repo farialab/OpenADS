@@ -277,6 +277,11 @@ Notes:
 * The web launcher forwards user provided subject paths and output root to backend scripts.
 * Report file listing and download in the web launcher uses the selected output root. 
 
+You can also lauch the GUI after install PyQt5
+```bash
+python GUI_launcher.py
+```
+
 ## Docker
 
 Build images:
