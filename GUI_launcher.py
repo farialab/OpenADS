@@ -13,6 +13,7 @@ import os
 import shutil
 import subprocess
 import csv
+import threading
 from html import escape
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Callable
@@ -43,6 +44,22 @@ if venv1.exists():
     DEFAULT_VENV_PATH = str(venv1)
 else:
     DEFAULT_VENV_PATH = str(venv2)
+
+
+def _resolve_python_executable(venv_root: str) -> str:
+    root = Path(venv_root).expanduser()
+    candidates = [root / "bin" / "python", root / "Scripts" / "python.exe"]
+    for candidate in candidates:
+        if candidate.exists():
+            return str(candidate)
+    return sys.executable
+
+
+def _resolve_user_path(raw_path: str, base_dir: str) -> str:
+    path = Path(raw_path).expanduser()
+    if not path.is_absolute():
+        path = Path(base_dir) / path
+    return str(path.resolve())
     
 # Pipeline stage definitions from JSON
 PIPELINE_STAGES = {
@@ -802,43 +819,32 @@ class StageUploadWidget(QWidget):
 
         config_path = self.get_config_path()
         gpu = self.get_gpu()
-        
         script_name = f"run_ads_{self.modality.lower()}.py"
         script_path = Path(DEFAULT_PROJECT_ROOT) / "scripts" / script_name
-        
+
         if not script_path.exists():
             QMessageBox.warning(self, "Script Not Found", f"Pipeline script not found:\n{script_path}")
             return
 
-        # Build command with auto-close and output refresh
         output_root = self.get_output_root().strip()
-        cmd = (
-            f"cd \"{DEFAULT_PROJECT_ROOT}\" && "
-            f"source \"{DEFAULT_VENV_PATH}/bin/activate\" && "
-            f"python \"{script_path}\" "
-            f"--subject-path \"{subject_path}\" "
-            f"--config \"{config_path}\" "
-            f"--gpu {gpu} "
-            f"--stages {self.stage_key} "
-            f"{f'--output-root \"{output_root}\" ' if output_root else ''}"
-            f"&& "
-            f"echo '' && echo 'Stage completed successfully!' && sleep 2 && exit"
-        )
-
-        # Very small terminal (1/4 size)
-        term_cmd = []
-        if shutil.which("gnome-terminal"):
-            term_cmd = ["gnome-terminal", "--geometry=60x15", "--", "bash", "-c", cmd]
-        elif shutil.which("konsole"):
-            term_cmd = ["konsole", "--geometry", "600x300", "-e", "bash", "-c", cmd]
-        elif shutil.which("xterm"):
-            term_cmd = ["xterm", "-geometry", "60x15", "-e", "bash", "-c", cmd]
-        else:
-            QMessageBox.critical(self, "Error", "No compatible terminal found")
-            return
+        python_exe = _resolve_python_executable(DEFAULT_VENV_PATH)
+        cmd = [
+            python_exe,
+            str(script_path),
+            "--subject-path",
+            str(Path(subject_path).expanduser()),
+            "--config",
+            _resolve_user_path(config_path, DEFAULT_PROJECT_ROOT),
+            "--gpu",
+            gpu,
+            "--stages",
+            self.stage_key,
+        ]
+        if output_root:
+            cmd.extend(["--output-root", str(Path(output_root).expanduser())])
 
         try:
-            subprocess.Popen(term_cmd)
+            subprocess.Popen(cmd, cwd=DEFAULT_PROJECT_ROOT)
             self.log_callback(
                 f"<span style='color: {COLORS['success']}; font-weight: bold;'>[LAUNCHED]</span> "
                 f"{self.stage_label}"
@@ -1189,6 +1195,8 @@ class ReportFilesWidget(QWidget):
 
 # -------------------- MAIN WINDOW --------------------
 class ADSWindow(QMainWindow):
+    pipeline_log_signal = pyqtSignal(str)
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("ADS Pipeline Launcher v4.3")
@@ -1208,6 +1216,7 @@ class ADSWindow(QMainWindow):
         
         self._setup_ui()
         self._init_defaults()
+        self.pipeline_log_signal.connect(self._append_log)
 
     def _setup_ui(self):
         central = QWidget()
@@ -1283,6 +1292,18 @@ class ADSWindow(QMainWindow):
 
     def _append_log(self, text: str):
         self.log_view.append(text)
+
+    def _stream_process_output(self, proc: subprocess.Popen):
+        if proc.stdout is None:
+            return
+        try:
+            for line in proc.stdout:
+                text = line.rstrip()
+                if text:
+                    self.pipeline_log_signal.emit(escape(text))
+        finally:
+            if proc.stdout:
+                proc.stdout.close()
 
     def _build_stage_tabs_for_modality(self, modality: str):
         while self.right_tabs.count() > 2:
@@ -1390,10 +1411,12 @@ class ADSWindow(QMainWindow):
         if self.is_running:
             reply = QMessageBox.question(
                 self, "Reset Pipeline State?",
-                "To stop processing, close the terminal window manually.\n\nReset this button to 'Ready'?",
+                "A pipeline is still running.\n\nStop it now and reset this button to 'Ready'?",
                 QMessageBox.Yes | QMessageBox.No
             )
             if reply == QMessageBox.Yes:
+                if self._terminal_proc and self._terminal_proc.poll() is None:
+                    self._terminal_proc.terminate()
                 self._reset_ui_state()
         else:
             self._launch_pipeline()
@@ -1451,10 +1474,12 @@ class ADSWindow(QMainWindow):
     def _launch_pipeline(self):
         proj_root = self.proj_root_edit.text()
         venv = self.venv_edit.text()
+        python_exe = _resolve_python_executable(venv)
         idx = self.mod_combo.currentIndex()
         launch_label = ""
         subject_label = ""
         stages_label = ""
+        cmd: List[str] = []
 
         if idx in (0, 1):
             is_dwi = (idx == 0)
@@ -1463,25 +1488,27 @@ class ADSWindow(QMainWindow):
             if not subj_path:
                 QMessageBox.warning(self, "Error", "Please select a Subject Folder first.")
                 return
-            script_name = "run_dwi.sh" if is_dwi else "run_pwi.sh"
+            script_name = "run_ads_dwi.py" if is_dwi else "run_ads_pwi.py"
             config_path = page.config_edit.text()
-            if not config_path.startswith("/"):
-                config_path = f"{proj_root}/{config_path}"
+            config_path = _resolve_user_path(config_path, proj_root)
             gpu = page.gpu_edit.text()
             out_root = page.output_root_edit.text().strip()
             stages = [k for k, cb in page.stage_checks.items() if cb.isChecked()]
             stages_str = ",".join(stages)
-
-            cmd_parts = [
-                f"cd \"{proj_root}\"",
-                f"source \"{venv}/bin/activate\"",
-                f"bash scripts/{script_name} \"{subj_path}\" --config \"{config_path}\" --gpu {gpu}",
+            cmd = [
+                python_exe,
+                str(Path(proj_root) / "scripts" / script_name),
+                "--subject-path",
+                str(Path(subj_path).expanduser()),
+                "--config",
+                config_path,
+                "--gpu",
+                gpu,
             ]
             if out_root:
-                cmd_parts[-1] += f" --output-root \"{out_root}\""
+                cmd.extend(["--output-root", str(Path(out_root).expanduser())])
             if stages_str:
-                cmd_parts[-1] += f" --stages {stages_str}"
-            cmd = " && ".join(cmd_parts) + " && echo '' && echo 'Pipeline completed successfully!' && sleep 3 && exit"
+                cmd.extend(["--stages", stages_str])
             launch_label = script_name
             subject_label = Path(subj_path).name
             stages_label = stages_str
@@ -1492,12 +1519,8 @@ class ADSWindow(QMainWindow):
             if not dwi_path or not pwi_path:
                 QMessageBox.warning(self, "Error", "Please select both DWI and PWI Subject Folders.")
                 return
-            dwi_cfg = page.dwi_config_edit.text()
-            pwi_cfg = page.pwi_config_edit.text()
-            if not dwi_cfg.startswith("/"):
-                dwi_cfg = f"{proj_root}/{dwi_cfg}"
-            if not pwi_cfg.startswith("/"):
-                pwi_cfg = f"{proj_root}/{pwi_cfg}"
+            dwi_cfg = _resolve_user_path(page.dwi_config_edit.text(), proj_root)
+            pwi_cfg = _resolve_user_path(page.pwi_config_edit.text(), proj_root)
             gpu = page.gpu_edit.text()
             out_root = page.output_root_edit.text().strip()
             dwi_stages_list = page.selected_dwi_stages()
@@ -1506,41 +1529,53 @@ class ADSWindow(QMainWindow):
             if not dwi_stages_list and not pwi_stages_list:
                 QMessageBox.warning(self, "Error", "Please select at least one stage for DWI or PWI.")
                 return
-
-            run_steps = [f"cd \"{proj_root}\"", f"source \"{venv}/bin/activate\""]
+            cmd = [python_exe, str(Path(proj_root) / "scripts" / "run_ads_combined.py")]
             if dwi_stages_list:
-                dwi_cmd = f"bash scripts/run_dwi.sh \"{dwi_path}\" --config \"{dwi_cfg}\" --gpu {gpu}"
-                if out_root:
-                    dwi_cmd += f" --output-root \"{out_root}\""
-                dwi_cmd += f" --stages {','.join(dwi_stages_list)}"
-                run_steps.append(dwi_cmd)
+                cmd.extend([
+                    "--dwi-subject-path",
+                    str(Path(dwi_path).expanduser()),
+                    "--dwi-config",
+                    dwi_cfg,
+                    "--dwi-stages",
+                    ",".join(dwi_stages_list),
+                ])
+            else:
+                cmd.append("--skip-dwi")
             if pwi_stages_list:
-                pwi_cmd = f"bash scripts/run_pwi.sh \"{pwi_path}\" --config \"{pwi_cfg}\" --gpu {gpu}"
-                if out_root:
-                    pwi_cmd += f" --output-root \"{out_root}\""
-                pwi_cmd += f" --stages {','.join(pwi_stages_list)}"
-                run_steps.append(pwi_cmd)
-            cmd = " && ".join(run_steps) + " && echo '' && echo 'Combined pipeline completed successfully!' && sleep 3 && exit"
-            launch_label = "run_dwi.sh + run_pwi.sh"
+                cmd.extend([
+                    "--pwi-subject-path",
+                    str(Path(pwi_path).expanduser()),
+                    "--pwi-config",
+                    pwi_cfg,
+                    "--pwi-stages",
+                    ",".join(pwi_stages_list),
+                ])
+            else:
+                cmd.append("--skip-pwi")
+            cmd.extend(["--gpu", gpu])
+            if out_root:
+                cmd.extend(["--output-root", str(Path(out_root).expanduser())])
+            launch_label = "run_ads_combined.py"
             subject_label = f"DWI={Path(dwi_path).name}, PWI={Path(pwi_path).name}"
             stages_label = (
                 f"DWI[{','.join(dwi_stages_list) or 'yaml'}], "
                 f"PWI[{','.join(pwi_stages_list) or 'yaml'}]"
             )
-        
-        term_cmd = []
-        if shutil.which("gnome-terminal"):
-            term_cmd = ["gnome-terminal", "--geometry=60x15", "--", "bash", "-c", cmd]
-        elif shutil.which("konsole"):
-            term_cmd = ["konsole", "--geometry", "600x300", "-e", "bash", "-c", cmd]
-        elif shutil.which("xterm"):
-            term_cmd = ["xterm", "-geometry", "60x15", "-e", "bash", "-c", cmd]
-        else:
-            QMessageBox.critical(self, "Error", "No compatible terminal found.")
-            return
 
         try:
-            self._terminal_proc = subprocess.Popen(term_cmd)
+            self._terminal_proc = subprocess.Popen(
+                cmd,
+                cwd=proj_root,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+            )
+            threading.Thread(
+                target=self._stream_process_output,
+                args=(self._terminal_proc,),
+                daemon=True,
+            ).start()
             self.is_running = True
             if not self._run_watch_timer.isActive():
                 self._run_watch_timer.start()
