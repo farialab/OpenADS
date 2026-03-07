@@ -279,7 +279,16 @@ class StrokeQFVCalculator:
             "stroke_logml": stroke_logml
         }
 
-    def save_QFV_to_csv(self, results: Dict[str, Any], subject_id: str, output_dir: str):
+    def save_QFV_to_csv(
+        self,
+        results: Dict[str, Any],
+        subject_id: str,
+        output_dir: str,
+        qfv_suffix: str = "QFV",
+        lesionload_suffix: str = "lesionload",
+        qfv_stem_map: Dict[str, str] | None = None,
+        lesionload_stem_map: Dict[str, str] | None = None,
+    ):
         """
         Save QFV results and lesionload to CSV files.
         
@@ -336,11 +345,11 @@ class StrokeQFVCalculator:
                     **roi_columns
                 })
                 
-                # Keep legacy naming for all atlases except BPM Type1, which should be explicit.
-                file_stem = "BPM_TYPE1_QFV" if qfv_type == "BPM" else f"{qfv_type.upper()}_QFV"
+                qfv_base = qfv_stem_map.get(qfv_type, "BPM_TYPE1" if qfv_type == "BPM" else qfv_type.upper()) if qfv_stem_map else ("BPM_TYPE1" if qfv_type == "BPM" else qfv_type.upper())
+                file_stem = f"{qfv_base}_{qfv_suffix}"
                 output_path = os.path.join(output_dir, f"{subject_id}_{file_stem}.csv")
                 df.to_csv(output_path, index=False)
-                logger.info(f"Saved {qfv_type} QFV to {output_path}")
+                logger.info(f"Saved {qfv_type} {qfv_suffix} to {output_path}")
 
         # ========== Save lesionload files ==========
         # Mapping for FV atlas keys to names.json keys
@@ -375,15 +384,13 @@ class StrokeQFVCalculator:
                 
                 df = pd.DataFrame([columns])
                 
-                # Use UPPERCASE for atlas name in filename
                 atlas_upper = atlas.upper()
-                output_path = os.path.join(output_dir, f"{subject_id}_{atlas_upper}_lesionload.csv")
-                if atlas_upper == "ASPECTPC":
-                    output_path = os.path.join(output_dir, f"{subject_id}_ASPECTSPC_lesionload.csv")
+                lesionload_base = lesionload_stem_map.get(atlas, "ASPECTSPC" if atlas_upper == "ASPECTPC" else atlas_upper) if lesionload_stem_map else ("ASPECTSPC" if atlas_upper == "ASPECTPC" else atlas_upper)
+                output_path = os.path.join(output_dir, f"{subject_id}_{lesionload_base}_{lesionload_suffix}.csv")
                 # if not BMOS and not BMIS, then save it.
                 if atlas_upper not in ["BMOS", "BMIS"]:
                     df.to_csv(output_path, index=False)
-                    logger.info(f"Saved {atlas} lesionload to {output_path}")
+                    logger.info(f"Saved {atlas} {lesionload_suffix} to {output_path}")
         
         # ========== Special handling for Ventricles ==========
         if "Ventricles_LVO" in results["FV"] and "Ventricles_LVI" in results["FV"]:
@@ -406,9 +413,10 @@ class StrokeQFVCalculator:
                     columns = {f"Ventricles_ROI_{i+1}": vec_combined[i] for i in range(len(vec_combined))}
                 
                 df = pd.DataFrame([columns])
-                output_path = os.path.join(output_dir, f"{subject_id}_VENTRICLES_lesionload.csv")
+                ventricles_base = lesionload_stem_map.get("Ventricles", "VENTRICLES") if lesionload_stem_map else "VENTRICLES"
+                output_path = os.path.join(output_dir, f"{subject_id}_{ventricles_base}_{lesionload_suffix}.csv")
                 df.to_csv(output_path, index=False)
-                logger.info(f"Saved Ventricles lesionload to {output_path}")
+                logger.info(f"Saved Ventricles {lesionload_suffix} to {output_path}")
 
 
 def process_qfv_single(template_dir: str, subj_dir: str, output_dir: str, subject_id: str = None):

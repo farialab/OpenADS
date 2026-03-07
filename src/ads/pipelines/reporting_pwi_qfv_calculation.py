@@ -1,8 +1,4 @@
-"""PWI HP load/QFV CSV generation using DWI-proven QFV pipeline logic.
-
-This module intentionally reuses the DWI QFV calculator and CSV writer, then
-renames outputs from stroke semantics to HP semantics.
-"""
+"""PWI HP load/QFV CSV generation using DWI-proven QFV pipeline logic."""
 
 from __future__ import annotations
 
@@ -78,30 +74,40 @@ def process_pwi_qfv_single(
         adc_threshold=0.5490,
         precision=7,
     )
-    builder.save_QFV_to_csv(results, subject_id=subject_id, output_dir=str(output_dir))
+    builder.save_QFV_to_csv(
+        results,
+        subject_id=subject_id,
+        output_dir=str(output_dir),
+        qfv_suffix="HPQFV",
+        lesionload_suffix="HPload",
+        qfv_stem_map={
+            "Vascular": "Vascular",
+            "Lobe": "Lobe",
+            "Aspects": "ASPECTS",
+            "AspectsPC": "ASPECTSPC",
+            "BPM": "BPM_TYPE1",
+        },
+        lesionload_stem_map={
+            "vascular": "Vascular",
+            "lobe": "Lobe",
+            "aspects": "ASPECTS",
+            "aspectpc": "ASPECTSPC",
+            "bpm_type1": "BPM_TYPE1",
+        },
+    )
 
-    rename_map = {
-        f"{subject_id}_VASCULAR_lesionload.csv": f"{subject_id}_Vascular_HPload.csv",
-        f"{subject_id}_LOBE_lesionload.csv": f"{subject_id}_Lobe_HPload.csv",
-        f"{subject_id}_ASPECTS_lesionload.csv": f"{subject_id}_ASPECTS_HPload.csv",
-        f"{subject_id}_ASPECTSPC_lesionload.csv": f"{subject_id}_ASPECTSPC_HPload.csv",
-        f"{subject_id}_BPM_TYPE1_lesionload.csv": f"{subject_id}_BPM_TYPE1_HPload.csv",
-        f"{subject_id}_VASCULAR_QFV.csv": f"{subject_id}_Vascular_HPQFV.csv",
-        f"{subject_id}_LOBE_QFV.csv": f"{subject_id}_Lobe_HPQFV.csv",
-        f"{subject_id}_ASPECTS_QFV.csv": f"{subject_id}_ASPECTS_HPQFV.csv",
-        f"{subject_id}_ASPECTSPC_QFV.csv": f"{subject_id}_ASPECTSPC_HPQFV.csv",
-        f"{subject_id}_BPM_TYPE1_QFV.csv": f"{subject_id}_BPM_TYPE1_HPQFV.csv",
-    }
-
-    produced: Dict[str, Path] = {}
-    for src_name, dst_name in rename_map.items():
-        src = output_dir / src_name
-        dst = output_dir / dst_name
-        if not src.exists():
-            continue
-        # Overwrite old target if present.
-        dst.unlink(missing_ok=True)
-        src.rename(dst)
-        produced[dst_name] = dst
-
-    return produced
+    expected = [
+        f"{subject_id}_Vascular_HPQFV.csv",
+        f"{subject_id}_Lobe_HPQFV.csv",
+        f"{subject_id}_ASPECTS_HPQFV.csv",
+        f"{subject_id}_ASPECTSPC_HPQFV.csv",
+        f"{subject_id}_BPM_TYPE1_HPQFV.csv",
+        f"{subject_id}_Vascular_HPload.csv",
+        f"{subject_id}_Lobe_HPload.csv",
+        f"{subject_id}_ASPECTS_HPload.csv",
+        f"{subject_id}_ASPECTSPC_HPload.csv",
+        f"{subject_id}_BPM_TYPE1_HPload.csv",
+        f"{subject_id}_VENTRICLES_HPQFV.csv",
+        f"{subject_id}_VENTRICLES_HPload.csv",
+    ]
+    return {name: (output_dir / name) for name in expected if (output_dir / name).exists()}
