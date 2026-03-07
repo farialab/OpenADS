@@ -117,17 +117,6 @@ Examples:
         )
         sys.exit(1)
 
-    subject_id = subject_path.name
-    out_root = Path(cfg["paths"]["output_root"])
-    
-    subj_out = out_root / subject_id
-    dwi_root = subj_out / "DWI"
-    pp_dir = dwi_root / "preprocess"
-    reg_dir = dwi_root / "registration"
-
-    dagmnet_path = Path(cfg["model"]["path"])
-    tpl_dir = Path(cfg["paths"]["templates"]["root"])
-    
     # Determine which stages to run (priority: --all > --stages > config)
     if args.all:
         # Run all stages
@@ -161,6 +150,35 @@ Examples:
         status = "✓ ENABLED" if enabled else "✗ DISABLED"
         log.info(f"  {stage_name:15s}: {status}")
     log.info("")
+
+    subject_id = subject_path.name
+    cfg_output_root = Path(cfg["paths"]["output_root"])
+
+    if args.output_root:
+          out_root = cfg_output_root
+          out_root.mkdir(parents=True, exist_ok=True)
+          subj_out = out_root / subject_id
+          log.info(f"Using explicit output root: {subj_out}")
+    elif stages.get("prepdata"):
+        out_root = cfg_output_root
+        out_root.mkdir(parents=True, exist_ok=True)
+        subj_out = out_root / subject_id
+        log.info(f"Using configured output root for prepdata: {subj_out}")
+    elif (subject_path / "DWI" / "preprocess").exists():
+        subj_out = subject_path
+        out_root = subj_out.parent
+        log.info(f"Using existing subject output root: {subj_out}")
+    else:
+        out_root = cfg_output_root
+        subj_out = out_root / subject_id
+        log.info(f"Using default output root: {subj_out}")
+
+    dwi_root = subj_out / "DWI"
+    pp_dir = dwi_root / "preprocess"
+    reg_dir = dwi_root / "registration"
+
+    dagmnet_path = Path(cfg["model"]["path"])
+    tpl_dir = Path(cfg["paths"]["templates"]["root"])
 
     try:
         # 1. Preprocess

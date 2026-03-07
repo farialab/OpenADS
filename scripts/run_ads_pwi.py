@@ -375,15 +375,44 @@ def run_pwi_single(cfg: dict, subject_path: Path) -> None:
     subject_id = subject_name if subject_name.startswith("sub-") else f"sub-{subject_name}"
     
     # Expand output root
+    stages = cfg.get("stages", {})
     out_root = Path(cfg["paths"]["output_root"])
-    out_root.mkdir(parents=True, exist_ok=True)
-    
-    subj_out = out_root / subject_id
+
+    if cfg.get("_user_set_output_root"):
+        out_root.mkdir(parents=True, exist_ok=True)
+        subj_out = out_root / subject_id
+        log.info(f"Using explicit output root: {subj_out}")
+    elif stages.get("prepdata"):
+        out_root.mkdir(parents=True, exist_ok=True)
+        subj_out = out_root / subject_id
+        log.info(f"Using configured output root for prepdata: {subj_out}")
+    elif (subject_path / "PWI" / "preprocess").exists():
+        subj_out = subject_path
+        out_root = subj_out.parent
+        log.info(f"Using existing subject output root: {subj_out}")
+    else:
+        subj_out = out_root / subject_id
+        log.info(f"Using default output root: {subj_out}")
+
     pwi_root = subj_out / "PWI"
     pp_dir = pwi_root / "preprocess"
     reg_dir = pwi_root / "registration"
-    
-    stages = cfg.get("stages", {})
+
+    if stages.get("prepdata"):
+        out_root.mkdir(parents=True, exist_ok=True)
+        subj_out = out_root / subject_id
+    else:
+        # check if DWI or PWI folder in subject_path, if so, use it as output 
+        if (subject_path / "PWI").exists():
+            log.info(f"Using existing PWI folder as output root: {subject_path / 'PWI'}")
+            subj_out = subject_path
+            out_root = subj_out.parent
+        else:
+            print(f"Warning: No existing PWI folder found in {subject_path}. Defaulting to output root: {out_root / subject_id}")
+
+    pwi_root = subj_out / "PWI"
+    pp_dir = pwi_root / "preprocess"
+    reg_dir = pwi_root / "registration"
 
     try:
         # 1. Prep Data
@@ -984,6 +1013,9 @@ Examples:
     if args.output_root:
         cfg.setdefault("paths", {})
         cfg["paths"]["output_root"] = str(args.output_root)
+        cfg["_user_set_output_root"] = True
+    else:
+        cfg["_user_set_output_root"] = False
     
     # Determine which stages to run (priority: --all > --stages > config)
     stages = cfg.get("stages", {})
