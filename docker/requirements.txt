@@ -15,7 +15,6 @@ tqdm>=4.66.4
 PyYAML>=6.0.1
 matplotlib>=3.8.0
 shap==0.46.0
-PyQt5==5.15.11
 pyvista==0.46.3
 tensorboard==2.19.0
 tensorboard-data-server==0.7.2
