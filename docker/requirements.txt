@@ -1,4 +1,4 @@
-# ADS docker requirements for pipelines and GUI
+# ADS docker requirements for pipelines, backend API, and optional Qt GUI
 numpy>=1.23.5,<2.3.0
 scipy==1.13.1
 psutil>=5.9
@@ -21,4 +21,4 @@ tensorboard-data-server==0.7.2
 uvicorn[standard]==0.30.6
 fastapi>=0.110
 python-multipart
-
+PyQt5==5.15.11

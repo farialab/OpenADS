@@ -7,10 +7,13 @@ ENV DEBIAN_FRONTEND=noninteractive \
     MPLCONFIGDIR=/tmp/matplotlib \
     XDG_CONFIG_HOME=/tmp/.config \
     XDG_CACHE_HOME=/tmp/.cache \
+    XDG_RUNTIME_DIR=/tmp/runtime-appuser \
     OPENADS_OUTPUT_ROOT=/app/output \
     OPENADS_UPLOAD_ROOT=/tmp/openads_raw_upload \
+    OPENADS_ENABLE_WEB_UI=0 \
     ADS_CACHE_DIR=/tmp/ads_cache \
     QT_QPA_PLATFORM=offscreen \
+    QT_X11_NO_MITSHM=1 \
     PYTHONPATH=/app:/app/src:/app/scripts:/app/docker
 
 # Base OS deps needed by ANTs/SimpleITK/Qt backends
@@ -45,7 +48,9 @@ RUN pip install -r /tmp/requirements.txt
 COPY . /app
 
 # Non-root user (match typical host uid)
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+RUN useradd -m -u 1000 appuser && \
+    mkdir -p /tmp/runtime-appuser && \
+    chown -R appuser:appuser /app /tmp/runtime-appuser
 
 # Install entrypoint with execute bit at copy time (BuildKit)
 COPY --chmod=0755 docker/entrypoint.sh /usr/local/bin/ads

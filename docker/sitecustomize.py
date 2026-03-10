@@ -2,6 +2,8 @@
 
 Ensures calculating ADC without a target path no longer triggers nibabel save on
 an empty string, which raised permission errors inside the container.
+
+These patches apply to API, CLI, and optional GUI container runs.
 """
 from __future__ import annotations
 
