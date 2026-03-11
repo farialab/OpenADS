@@ -27,32 +27,32 @@ class AtlasConfigEntry:
 
 AtlasConfig = {
     # Vascular territories
-    "vascular": AtlasConfigEntry("ArterialAtlas_MNI182.nii", "Vas_Lookup_Volume_df_MNI.pkl"),
+    "vascular": AtlasConfigEntry("ArterialAtlas_MNI182.nii.gz", "Vas_Lookup_Volume_df_MNI.pkl"),
     "watershed": AtlasConfigEntry(),
     # Anatomical regions
-    "lobe": AtlasConfigEntry("LobeAtlas_MNI182.nii", "Lobe_Lookup_Volume_df_MNI.pkl"),
-    "aspects": AtlasConfigEntry("AspectsAtlas_MNI182.nii", "Aspects_Lookup_Volume_df_MNI.pkl"),
+    "lobe": AtlasConfigEntry("LobeAtlas_MNI182.nii.gz", "Lobe_Lookup_Volume_df_MNI.pkl"),
+    "aspects": AtlasConfigEntry("AspectsAtlas_MNI182.nii.gz", "Aspects_Lookup_Volume_df_MNI.pkl"),
     # Ventricle-related
-    "Ventricles": AtlasConfigEntry("VentriclesEnlargedAtlas_MNI182.nii"),
+    "Ventricles": AtlasConfigEntry("VentriclesEnlargedAtlas_MNI182.nii.gz"),
     "lvor": AtlasConfigEntry(volume_table="LVOR_Lookup_Volume_df_MNI.pkl"),
     "lvir": AtlasConfigEntry(volume_table="LVIR_Lookup_Volume_df_MNI.pkl"),
     # Brain matter segmentation
-    "bmos": AtlasConfigEntry("BMOSAtlas_MNI182.nii", "BMOS_Lookup_Volume_df_MNI.pkl"),
-    "bmis": AtlasConfigEntry("BMISAtlas_MNI182.nii", "BMIS_Lookup_Volume_df_MNI.pkl"),
-    "bpm_type1": AtlasConfigEntry("BPMTypeIV2Atlas_MNI182.nii", "JHU_MNI_SS_BPM_TypeI_V2_Lookup_Volume_df_MNI.pkl")
+    "bmos": AtlasConfigEntry("BMOSAtlas_MNI182.nii.gz", "BMOS_Lookup_Volume_df_MNI.pkl"),
+    "bmis": AtlasConfigEntry("BMISAtlas_MNI182.nii.gz", "BMIS_Lookup_Volume_df_MNI.pkl"),
+    "bpm_type1": AtlasConfigEntry("BPMTypeIV2Atlas_MNI182.nii.gz", "JHU_MNI_SS_BPM_TypeI_V2_Lookup_Volume_df_MNI.pkl")
 }
 
 def get_VasLobeTemp(TemplateDir):
     vas_pth = _resolve_template_path(
         TemplateDir,
         (
-            'ArterialAtlas_MNI182.nii',
+            'ArterialAtlas_MNI182.nii.gz',
         ),
     )
     lobe_pth = _resolve_template_path(
         TemplateDir,
         (
-            'LobeAtlas_MNI182.nii',
+            'LobeAtlas_MNI182.nii.gz',
         ),
     )
 

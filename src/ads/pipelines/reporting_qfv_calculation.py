@@ -33,17 +33,17 @@ class AtlasConfigEntry:
 
 # Atlas definitions
 AtlasConfig = {
-    "vascular": AtlasConfigEntry("ArterialAtlas_MNI182.nii", "Vas_Lookup_Volume_df_MNI.pkl"),
+    "vascular": AtlasConfigEntry("ArterialAtlas_MNI182.nii.gz", "Vas_Lookup_Volume_df_MNI.pkl"),
     "watershed": AtlasConfigEntry(),
-    "lobe": AtlasConfigEntry("LobeAtlas_MNI182.nii", "Lobe_Lookup_Volume_df_MNI.pkl"),
-    "aspects": AtlasConfigEntry("AspectsAtlas_MNI182.nii", "Aspects_Lookup_Volume_df_MNI.pkl"),
-    "aspectpc": AtlasConfigEntry("AspectsPcaAtlas_MNI182.nii", "Aspects_PCA_Lookup_Volume_df_MNI.pkl"),
-    "Ventricles": AtlasConfigEntry("VentriclesEnlargedAtlas_MNI182.nii"),
+    "lobe": AtlasConfigEntry("LobeAtlas_MNI182.nii.gz", "Lobe_Lookup_Volume_df_MNI.pkl"),
+    "aspects": AtlasConfigEntry("AspectsAtlas_MNI182.nii.gz", "Aspects_Lookup_Volume_df_MNI.pkl"),
+    "aspectpc": AtlasConfigEntry("AspectsPcaAtlas_MNI182.nii.gz", "Aspects_PCA_Lookup_Volume_df_MNI.pkl"),
+    "Ventricles": AtlasConfigEntry("VentriclesEnlargedAtlas_MNI182.nii.gz"),
     "lvor": AtlasConfigEntry(volume_table="LVOR_Lookup_Volume_df_MNI.pkl"),
     "lvir": AtlasConfigEntry(volume_table="LVIR_Lookup_Volume_df_MNI.pkl"),
-    "bmos": AtlasConfigEntry("BMOSAtlas_MNI182.nii", "BMOS_Lookup_Volume_df_MNI.pkl"),
-    "bmis": AtlasConfigEntry("BMISAtlas_MNI182.nii", "BMIS_Lookup_Volume_df_MNI.pkl"),
-    "bpm_type1": AtlasConfigEntry("BPMTypeIV2Atlas_MNI182.nii", "JHU_MNI_SS_BPM_TypeI_V2_Lookup_Volume_df_MNI.pkl")
+    "bmos": AtlasConfigEntry("BMOSAtlas_MNI182.nii.gz", "BMOS_Lookup_Volume_df_MNI.pkl"),
+    "bmis": AtlasConfigEntry("BMISAtlas_MNI182.nii.gz", "BMIS_Lookup_Volume_df_MNI.pkl"),
+    "bpm_type1": AtlasConfigEntry("BPMTypeIV2Atlas_MNI182.nii.gz", "JHU_MNI_SS_BPM_TypeI_V2_Lookup_Volume_df_MNI.pkl")
 }
 
 def get_LookupTables(TemplateDir, LOOKUPS=["vascular", "lobe", "aspects", "lvor", "lvir", "bmos", "bmis", "aspectpc","bpm_type1"]) -> Dict[str, pd.DataFrame]:

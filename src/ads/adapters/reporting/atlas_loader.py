@@ -24,47 +24,47 @@ class AtlasLoader:
     # Atlas configuration mapping
     ATLAS_CONFIG = {
         "vascular": {
-            "atlas_name": "ArterialAtlas_MNI182.nii",
+            "atlas_name": "ArterialAtlas_MNI182.nii.gz",
             "volume_table": "Vas_Lookup_Volume_df_MNI.pkl",
             "label_table": "ArterialLabelLookupTable.txt",
         },
         "lobe": {
-            "atlas_name": "LobeAtlas_MNI182.nii",
+            "atlas_name": "LobeAtlas_MNI182.nii.gz",
             "volume_table": "Lobe_Lookup_Volume_df_MNI.pkl",
             "label_table": "LobesLabelLookupTable.txt",
         },
         "aspects": {
-            "atlas_name": "AspectsAtlas_MNI182.nii",
+            "atlas_name": "AspectsAtlas_MNI182.nii.gz",
             "volume_table": "Aspects_Lookup_Volume_df_MNI.pkl",
             "label_table": "AspectsLabelLookupTable.txt",
         },
         "aspectpc": {
-            "atlas_name": "AspectsPcaAtlas_MNI182.nii",
+            "atlas_name": "AspectsPcaAtlas_MNI182.nii.gz",
             "volume_table": "Aspects_PCA_Lookup_Volume_df_MNI.pkl",
             "label_table": "AspectsPCALabelLookupTable.txt",
         },
         "Ventricles": {
-            "atlas_name": "VentriclesEnlargedAtlas_MNI182.nii",
+            "atlas_name": "VentriclesEnlargedAtlas_MNI182.nii.gz",
             "volume_table": None,
             "label_table": None,
         },
         "watershed": {
-            "atlas_name": "WatershedAtlas_MNI182.nii",
+            "atlas_name": "WatershedAtlas_MNI182.nii.gz",
             "volume_table": None,
             "label_table": None,
         },
         "bpm_type1": {
-            "atlas_name": "BPMTypeIV2Atlas_MNI182.nii",
+            "atlas_name": "BPMTypeIV2Atlas_MNI182.nii.gz",
             "volume_table": "JHU_MNI_SS_BPM_TypeI_V2_Lookup_Volume_df_MNI.pkl",
             "label_table": "BPMLabelLookupTable.txt",
         },
         "bmos": {
-            "atlas_name": "BMOSAtlas_MNI182.nii",
+            "atlas_name": "BMOSAtlas_MNI182.nii.gz",
             "volume_table": "BMOS_Lookup_Volume_df_MNI.pkl",
             "label_table": None,
         },
         "bmis": {
-            "atlas_name": "BMISAtlas_MNI182.nii",
+            "atlas_name": "BMISAtlas_MNI182.nii.gz",
             "volume_table": "BMIS_Lookup_Volume_df_MNI.pkl",
             "label_table": None,
         },

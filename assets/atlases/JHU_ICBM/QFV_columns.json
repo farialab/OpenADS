@@ -1,0 +1,108 @@
+{
+  "Vascular": {
+    "LabelLookupTable": [
+      "ACAL", "ACAR", "MLSL", "MLSR", "LLSL", "LLSR",
+      "MCAFL", "MCAFR", "MCAPL", "MCAPR", "MCATL", "MCATR",
+      "MCAOL", "MCAOR", "MCAIL", "MCAIR", "PCATL", "PCATR",
+      "PCAOL", "PCAOR", "PCTPL", "PCTPR", "ACTPL", "ACTPR",
+      "BL", "BR", "SCL", "SCR", "ICL", "ICR",
+      "LVL", "LVR"
+    ],
+    "QFV_names": [
+      "ACA", "MLS", "LLS", "MCAF", "MCAP", "MCAT",
+      "MCAO", "MCAI", "PCAT", "PCAO", "PCTP", "ACTP",
+      "B", "SC", "IC", "LV"
+    ]
+  },
+  "Aspects": {
+    "LabelLookupTable": [
+      "caudate_L", "caudate_R", "lentiform_nucleus_L", "lentiform_R", "IC_L", "IC_R",
+      "insular_ribbon_L", "insular_ribbon_R", "M1_L", "M1_R", "M2_L", "M2_R",
+      "M3_L", "M3_R", "M4_L", "M4_R", "M5_L", "M5_R",
+      "M6_L", "M6_R"
+    ],
+    "QFV_names": [
+      "caudate", "lentiform", "IC", "insular", "M1", "M2","M3", "M6", "M5", "M4"
+    ]
+  },
+  "AspectsPC": {
+    "LabelLookupTable": [
+      "PCAL", "PCAR", "Thalamus_L", "Thalamus_R", "P1_L", "P1_R",
+      "P2_L", "P2_R"
+    ],
+    "QFV_names": [
+      "PCA", "Thalamus", "midbrain"
+    ]
+  },
+  "BPM": {
+    "LabelLookupTable": [
+      "SFG_L", "SFG_R", "SFG_PFC_L", "SFG_PFC_R", "SFG_pole_L", "SFG_pole_R",
+      "MFG_L", "MFG_R", "MFG_DPFC_L", "MFG_DPFC_R", "IFG_opercularis_L", "IFG_opercularis_R",
+      "IFG_orbitalis_L", "IFG_orbitalis_R", "IFG_triangularis_L", "IFG_triangularis_R", "LFOG_L", "LFOG_R",
+      "MFOG_L", "MFOG_R", "RG_L", "RG_R", "PoCG_L", "PoCG_R",
+      "PrCG_L", "PrCG_R", "SPG_L", "SPG_R", "SMG_L", "SMG_R",
+      "AG_L", "AG_R", "PrCu_L", "PrCu_R", "STG_L", "STG_R",
+      "STG_L_pole", "STG_R_pole", "MTG_L", "MTG_R", "MTG_L_pole", "MTG_R_pole",
+      "ITG_L", "ITG_R", "PHG_L", "PHG_R", "ENT_L", "ENT_R",
+      "FuG_L", "FuG_R", "SOG_L", "SOG_R", "MOG_L", "MOG_R",
+      "IOG_L", "IOG_R", "Cu_L", "Cu_R", "LG_L", "LG_R",
+      "rostral_ACC_L", "rostral_ACC_R", "subcallosal_ACC_L", "subcallosal_ACC_R", "subgenual_ACC_L", "subgenual_ACC_R",
+      "dorsal_ACC_L", "dorsal_ACC_R", "PCC_L", "PCC_R", "Ins_L", "Ins_R",
+      "Amyg_L", "Amyg_R", "Hippo_L", "Hippo_R", "Caud_L", "Caud_R",
+      "Put_L", "Put_R", "GP_L", "GP_R", "Thal_L", "Thal_R",
+      "HypoThalamus_L", "HypoThalamus_R", "Mynert_L", "Mynert_R", "NucAccumbens_L", "NucAccumbens_R",
+      "RedNc_L", "RedNc_R", "Snigra_L", "Snigra_R", "Cerebellum_L", "Cerebellum_R",
+      "CP_L", "CP_R", "Midbrain_L", "Midbrain_R", "CST_L", "CST_R",
+      "SCP_L", "SCP_R", "MCP_L", "MCP_R", "PCT_L", "PCT_R",
+      "ICP_L", "ICP_R", "ML_L", "ML_R", "Pons_L", "Pons_R",
+      "Medulla_L", "Medulla_R", "ACR_L", "ACR_R", "SCR_L", "SCR_R",
+      "PCR_L", "PCR_R", "GCC_L", "GCC_R", "BCC_L", "BCC_R",
+      "SCC_L", "SCC_R", "TAP_L", "TAP_R", "ALIC_L", "ALIC_R",
+      "PLIC_L", "PLIC_R", "RLIC_L", "RLIC_R", "EC_L", "EC_R",
+      "CGC_L", "CGC_R", "CGH_L", "CGH_R", "Fx/ST_L", "Fx/ST_R",
+      "Fx_L", "Fx_R", "IFO_L", "IFO_R", "PTR_L", "PTR_R",
+      "SS_L", "SS_R", "SFO_L", "SFO_R", "SLF_L", "SLF_R",
+      "UNC_L", "UNC_R", "AnsaLenticularis_L", "AnsaLenticularis_R", "AnteriorCom_L", "AnteriorCom_R",
+      "LenticularFasc_L", "LenticularFasc_R", "OlfactoryRadiation_L", "OlfactoryRadiation_R", "Mammillary_L", "Mammillary_R",
+      "OpticTract_L", "OpticTract_R", "LV_Frontal_L", "LV_body_L", "LV_atrium_L", "LV_Occipital_L",
+      "LV_Temporal_L", "LV_Frontal_R", "LV_body_R", "LV_atrium_R", "LV_Occipital_R", "LV_Temporal_R",
+      "III_and_IV_ventricle", "PVWf_L", "PVWf_R", "PVWp_L", "PVWp_R", "SFWM_L",
+      "SFWM_R", "SFWM_PFC_L", "SFWM_PFC_R", "SFWM_pole_L", "SFWM_pole_R", "MFWM_L",
+      "MFWM_R", "MFWM_DPFC_L", "MFWM_DPFC_R", "IFWM_opercularis_L", "IFWM_opercularis_R", "IFWM_orbitalis_L",
+      "IFWM_orbitalis_R", "IFWM_triangularis_L", "IFWM_triangularis_R", "LFOWM_L", "LFOWM_R", "MFOWM_L",
+      "MFOWM_R", "RGWM_L", "RGWM_R", "PoCWM_L", "PoCWM_R", "PrCWM_L",
+      "PrCWM_R", "SPWM_L", "SPWM_R", "SMWM_L", "SMWM_R", "AWM_L",
+      "AWM_R", "PrCuWM_L", "PrCuWM_R", "STWM_L", "STWM_R", "STWM_L_pole",
+      "STWM_R_pole", "MTWM_L", "MTWM_R", "MTWM_L_pole", "MTWM_R_pole", "ITWM_L",
+      "ITWM_R", "FuWM_L", "FuWM_R", "SOWM_L", "SOWM_R", "MOWM_L",
+      "MOWM_R", "IOWM_L", "IOWM_R", "CuWM_L", "CuWM_R", "LWM_L",
+      "LWM_R", "rostralWM_ACC_L", "rostralWM_ACC_R", "subcallosalWM_ACC_L", "subcallosalWM_ACC_R", "subgenualWM_ACC_L",
+      "subgenualWM_ACC_R", "dorsalWM_ACC_L", "dorsalWM_ACC_R", "PCCWM_L", "PCCWM_R", "CerebellumWM_L",
+      "CerebellumWM_R", "PCSF", "Pins_L", "Pins_R", "PSTG_L", "PSTG_R",
+      "PMTG_L", "PMTG_R", "PITG_L", "PITG_R", "PSTGWM_L", "PSTGWM_R",
+      "PMTGWM_L", "PMTGWM_R", "PITGWM_L", "PITGWM_R"
+    ],
+    "QFV_names": [
+      "SF", "SF_PF", "SF_pole", "MF", "MF_DPF", "IF",
+      "FO", "PoC", "PrC", "SP", "SM", "AG",
+      "PrCu", "ST", "ST_pole", "MT", "MT_pole", "IT",
+      "Limbic", "Fu", "SO", "MO", "IO", "Cu",
+      "Ling", "Cing", "Ins", "Caud", "Put", "GP",
+      "Thal", "midb", "cereb", "pons", "ACR", "SCR",
+      "PCR", "CC", "IC", "PTR", "IFOF", "SLF",
+      "Unc", "PST", "PMT", "PIT"
+    ]
+  },
+  "Lobes": {
+    "LabelLookupTable": [
+      "frontal_L", "frontal_R", "parietal_L", "parietal_R", "temporal_L", "temporal_R",
+      "cingullum_L", "cingullum_R", "occipital_L", "occipital_R", "insula_L", "insula_R",
+      "BasalGanglia_L", "BasalGanglia_R", "Thalamus_L", "Thalamus_R", "cerebellum_L", "cerebellum_R"
+    ],
+    "QFV_names": [
+      "frontal", "parietal", "temporal", "cingullum", "occipital", "insula",
+      "BasalGanglia", "Thalamus", "cerebellum"
+    ]
+  }
+}
+
