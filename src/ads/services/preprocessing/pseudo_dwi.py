@@ -52,8 +52,9 @@ class PseudoDWIGenerator:
 
     @staticmethod
     def _resolve_mask(adc: np.ndarray, brain_mask: np.ndarray | None, threshold: float) -> np.ndarray:
+        valid_adc = np.isfinite(adc) & (adc > float(threshold))
         if brain_mask is None:
-            mask = np.isfinite(adc) & (adc > float(threshold))
+            mask = valid_adc
         else:
             mask = np.asarray(brain_mask) > 0.5
             if mask.shape != adc.shape:
@@ -61,6 +62,7 @@ class PseudoDWIGenerator:
                     mask = mask[..., None]
                 else:
                     raise ValueError(f"Mask shape mismatch: mask={mask.shape}, adc={adc.shape}")
+            mask = mask & valid_adc
         if int(mask.sum()) == 0:
             raise RuntimeError("Brain mask is empty; cannot synthesize pseudo DWI.")
         return mask
