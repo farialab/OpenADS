@@ -440,4 +440,4 @@ For the dataset: Liu CF, Leigh R, Johnson B, Urrutia V, Hsu J, Xu X, Li X, Mori 
 For the dataset source: Faria, Andreia V. Annotated Clinical MRIs and Linked Metadata of Patients with Acute Stroke, Baltimore, Maryland, 2009-2019. Inter-university Consortium for Political and Social Research [distributor], 2022-12-12. https://doi.org/10.3886/ICPSR38464.v5
 
 ## License 
-This work is licensed under GNU General Public License v3.0, as found in the LICENSE file.
+This work is licensed under JHU Non-Profit Research Software License Agreement, as found in the LICENSE file.
