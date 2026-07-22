@@ -136,9 +136,12 @@ def cal_bpm_prob(features, lookups, precision=3):
             return None
 
         bpm_volume = np.array(bpm_df[0])
-        bpm_prob_raw = features["bpm_type1"] / (bpm_volume + 1e-6)
-        bpm_visual_prob = vec_BPMAtlas2visual(bpm_prob_raw, BPMtype1_dict)
-        return bpm_visual_prob.round(precision)
+        bpm_visual_count = vec_BPMAtlas2visual(features["bpm_type1"], BPMtype1_dict)
+        bpm_visual_volume = vec_BPMAtlas2visual(bpm_volume, BPMtype1_dict)
+        bpm_final_count = get_BPM_visual_prob_comb(bpm_visual_count)
+        bpm_final_volume = get_BPM_visual_prob_comb(bpm_visual_volume)
+        bpm_final_prob = bpm_final_count / (bpm_final_volume + 1e-6)
+        return bpm_final_prob.round(precision)
     
     except KeyError as e:
         logger.error(f"KeyError in BPM calculation: {e}. Skipping BPM QFV.")
@@ -218,7 +221,7 @@ def get_QFV(FV_prob_list, predict_vol_logml, deci_prec=3):
         get_Aspectpc_visual_prob_comb, # new 3: AspectPC
         lambda x: x,                   # 4: Ventricles (Identity, matches index 4 in input)
         lambda x: x,                   # 5: BMS (Identity, matches index 5 in input)
-        get_BPM_visual_prob_comb       # 6: BPM (matches index 6 in input)
+        lambda x: x                    # 6: BPM (already combined in cal_bpm_prob)
     ]
     
     qfv_results = []
